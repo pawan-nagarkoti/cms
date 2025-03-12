@@ -1,7 +1,7 @@
-// src/app/dashboard/layout.js
+"use client";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ToastProvider } from "@/components/toastProvider";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 
 export default function DashboardLayout({ children }) {
   return (
@@ -20,7 +20,10 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <div className="p-4">{children}</div>
+        <div className="p-4">
+          {children}
+          <ToastProvider />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

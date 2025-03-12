@@ -66,3 +66,25 @@ export async function GET() {
     );
   }
 }
+
+// delete all category
+export async function DELETE() {
+  try {
+    await Category.deleteMany({});
+
+    return NextResponse.json({
+      success: true,
+      data: [],
+      message: "Deleted all category",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Something went wrong! Please try again",
+      },
+      { status: 500 } // Internal Server Error
+    );
+  }
+}

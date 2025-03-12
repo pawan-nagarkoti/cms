@@ -15,6 +15,6 @@ const Input = forwardRef(({ label, type = "text", placeholder, className, ...pro
   );
 });
 
-Input.displayName = "Input"; // ✅ Required when using forwardRef
+Input.displayName = "Input";
 
 export default Input;
