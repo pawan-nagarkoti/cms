@@ -157,7 +157,12 @@ export default function page() {
                 <CustomCheckbox ref={checkboxRef} label="Index" onCheckedChange={(checked) => setIsCheckedIndex(checked)} checked={isCheckedIndex} />
               </div>
               <div className="mb-[40px]">
-                <CustomToggle ref={toggleRef} label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
+                <CustomToggle
+                  ref={toggleRef}
+                  label="status (Active / Inactive)"
+                  onCheckedChange={(checked) => setIsActive(checked)}
+                  checked={isActive}
+                />
               </div>
               <Button onClick={() => setIsOpen(false)} type="button">
                 Close

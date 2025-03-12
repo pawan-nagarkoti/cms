@@ -48,7 +48,9 @@ export async function POST(req) {
 export async function GET() {
   try {
     await connectToDB();
-    const extractAllCategoryFromDatabase = await Category.find({});
+
+    // Fetch categories sorted by newest first (createdAt in descending order)
+    const extractAllCategoryFromDatabase = await Category.find({}).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
