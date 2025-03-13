@@ -45,32 +45,16 @@ export async function POST(req) {
 }
 
 // fetch all category
-export async function GET(request) {
+export async function GET() {
   try {
     await connectToDB();
 
-    // Extract query parameters
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page")) || 1; // Default to page 1
-    const limit = parseInt(searchParams.get("limit")) || 2; // Default to 10 items per page
-    const skip = (page - 1) * limit; // Calculate how many to skip
-
-    // Fetch categories sorted by newest first and apply pagination
-    const extractAllCategoryFromDatabase = await Category.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit);
-
-    // Get total document count for pagination metadata
-    const totalDocuments = await Category.countDocuments();
-    const totalPages = Math.ceil(totalDocuments / limit);
+    // Fetch categories sorted by newest first (createdAt in descending order)
+    const extractAllCategoryFromDatabase = await Category.find({}).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
       data: extractAllCategoryFromDatabase,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems: totalDocuments,
-        perPage: limit,
-      },
       message: "Fetch category successfully",
     });
   } catch (error) {

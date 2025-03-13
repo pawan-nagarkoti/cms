@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <div>
-      <Button>Click me</Button>
-    </div>
-  );
+export default function Page() {
+  // Redirect to another page
+  redirect("/dashboard");
+  return null;
 }

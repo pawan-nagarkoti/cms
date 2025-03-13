@@ -1,45 +1,54 @@
 import connectToDB from "@/lib/db";
-import Blog from "@/models/blog";
 import { NextResponse } from "next/server";
 import { AddNewBlogSchema } from "@/schema/blogSchema";
+import Blog from "@/models/blog";
 
 // Add blog
 export async function POST(req) {
   try {
     await connectToDB();
 
-    const extractBlogData = await req.json();
-    const { title, description } = extractBlogData;
+    const formData = await req.formData();
+    const data = Object.fromEntries(formData.entries());
 
-    // ✅ Validate before inserting into DB
-    const { error } = AddNewBlogSchema.validate({ title, description });
+    // Store the received data
+    const blogData = {
+      title: data.title || "",
+      slug: data.slug || "",
+      shortDescription: data.shortDescription || "",
+      thumbnailImage: data.thumbnailImage || "",
+      featuredImage: data.featuredImage || "",
+      metaTitle: data.metaTitle || "",
+      metaKeywords: data.metaKeywords || "",
+      metaDescription: data.metaDescription || "",
+      canonicalTag: data.canonicalTag || "",
+      hrefLangTag: data.hrefLangTag || "",
+      geoRegion: data.geoRegion || "",
+      geoPlacename: data.geoPlacename || "",
+      geoPosition: data.geoPosition || "",
+      icbm: data.icbm || "",
+      twitterCard: data.twitterCard || "",
+      twitterURL: data.twitterURL || "",
+      twitterTitle: data.twitterTitle || "",
+    };
 
-    if (error) {
-      return NextResponse.json(
-        { success: false, message: error.details[0].message },
-        { status: 400 } // Bad Request
-      );
-    }
-
-    // ✅ Now proceed with DB insertion
-    const newlyCreatedBlog = await Blog.create(extractBlogData);
-
+    const newlyCreatedBlog = await Blog.create(blogData);
     return NextResponse.json(
       {
         success: true,
         data: newlyCreatedBlog,
         message: "Blog added successfully",
       },
-      { status: 201 } // Created
+      { status: 201 }
     );
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     return NextResponse.json(
       {
         success: false,
         message: "Something went wrong! Please try again",
       },
-      { status: 500 } // Internal Server Error
+      { status: 500 }
     );
   }
 }
