@@ -1,6 +1,7 @@
 "use client";
 
 import CustomEditor from "@/components/forms/CustomEditor";
+import SelectDropdown from "@/components/forms/CustomSelect";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
 import { CustomToggle } from "@/components/forms/Toggle";
@@ -44,6 +45,14 @@ export default function Page() {
     e.preventDefault();
     console.log("Form Data Submitted:", formData, isActive, isFeatured, isIndex);
   };
+
+  const options = [
+    { value: "apple", label: "Apple" },
+    { value: "banana", label: "Banana" },
+    { value: "cherry", label: "Cherry" },
+  ];
+  const [selectedOption, setSelectedOption] = useState(null);
+
   return (
     <>
       <form onSubmit={handleBlogFormSubmit}>
@@ -109,9 +118,11 @@ export default function Page() {
           <Input label="Twitter Card" placeholder="Enter twitter card" name="twitterCard" value={formData?.twitterCard} onChange={handleChange} />
           <Input label="Twitter URL" placeholder="Enter twitter url" name="twitterURL" value={formData?.twitterURL} onChange={handleChange} />
           <Input label="Twitter Title" placeholder="Enter twitter title" name="twitterTitle" value={formData?.twitterTitle} onChange={handleChange} />
+          <SelectDropdown label="Category" options={options} onChange={setSelectedOption} placeholder="Choose an category" />
+          <SelectDropdown label="Tag" options={options} onChange={setSelectedOption} placeholder="Choose an tag" />
         </div>
 
-        <div className="grid grid-cols-4 gap-5 mt-6">
+        <div className="grid gap-3 mt-6">
           <CustomToggle label="Is Featured" onCheckedChange={(checked) => setIsFeatured(checked)} checked={isFeatured} />
           <CustomToggle label="Index" onCheckedChange={(checked) => setIndex(checked)} checked={isIndex} />
           <CustomToggle label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
