@@ -1,23 +1,36 @@
 import connectToDB from "@/lib/db";
 import { NextResponse } from "next/server";
-import { AddNewBlogSchema } from "@/schema/blogSchema";
 import Blog from "@/models/blog";
+import { convertBase64 } from "@/lib/utils";
 
-// Add blog
 export async function POST(req) {
   try {
     await connectToDB();
-
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
 
-    // Store the received data
+    const thumbnailImage = formData.get("thumbnailImage");
+    const featuredImage = formData.get("featuredImage");
+
+    let thumbnailUrl = "";
+    let featuredUrl = "";
+
+    // Convert File to base64 and upload to Cloudinary
+    if (thumbnailImage) {
+      thumbnailUrl = await convertBase64(thumbnailImage);
+    }
+
+    if (featuredImage) {
+      featuredUrl = await convertBase64(featuredImage);
+    }
+
+    // Store the received data in MongoDB
     const blogData = {
       title: data.title || "",
       slug: data.slug || "",
       shortDescription: data.shortDescription || "",
-      thumbnailImage: data.thumbnailImage || "",
-      featuredImage: data.featuredImage || "",
+      thumbnailImage: thumbnailUrl || "",
+      featuredImage: featuredUrl || "",
       metaTitle: data.metaTitle || "",
       metaKeywords: data.metaKeywords || "",
       metaDescription: data.metaDescription || "",
@@ -42,7 +55,7 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     return NextResponse.json(
       {
         success: false,
