@@ -1,5 +1,6 @@
 "use client";
 
+import CustomEditor from "@/components/forms/CustomEditor";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
 import { CustomToggle } from "@/components/forms/Toggle";
@@ -61,6 +62,11 @@ export default function Page() {
           <Textarea label="Short Description" name="shortDescription" value={formData?.shortDescription} onChange={handleChange} />
         </div>
 
+        {/* Editor */}
+        <div className="mt-6">
+          <CustomEditor />
+        </div>
+
         {/* File Upload Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-6">
           <div className="sm:col-span-6 col-span-12">
@@ -77,7 +83,13 @@ export default function Page() {
             <Input label="Meta Title" placeholder="Enter meta title" name="metaTitle" value={formData?.metaTitle} onChange={handleChange} />
           </div>
           <div className="sm:col-span-6 col-span-12">
-            <Input label="Meta Keywords" placeholder="Enter meta keyword" name="metaKeywords" value={formData?.metaKeywords} onChange={handleChange} />
+            <Input
+              label="Meta Keywords"
+              placeholder="Enter meta keyword"
+              name="metaKeywords"
+              value={formData?.metaKeywords}
+              onChange={handleChange}
+            />
           </div>
         </div>
 

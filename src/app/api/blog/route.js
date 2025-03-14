@@ -1,7 +1,7 @@
 import connectToDB from "@/lib/db";
 import { NextResponse } from "next/server";
 import Blog from "@/models/blog";
-import { convertBase64 } from "@/lib/utils";
+import { convertBase64 } from "@/lib/cloudinary";
 
 export async function POST(req) {
   try {
