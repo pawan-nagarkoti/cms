@@ -1,18 +1,18 @@
 import connectToDB from "@/lib/db";
-import Category from "@/models/category";
-import { CategorySchema } from "@/schema/categorySchema";
+import Tag from "@/models/tag";
+import { TagSchema } from "@/schema/tag-schema";
 import { NextResponse } from "next/server";
 
-// add category
+// add tag
 export async function POST(req) {
   try {
     await connectToDB();
 
-    const extractCategory = await req.json();
-    const { name, index, status } = extractCategory;
+    const extractTag = await req.json();
+    const { name, index, status } = extractTag;
 
     // ✅ Validate before inserting into DB
-    const { error } = CategorySchema.validate({ name, index, status });
+    const { error } = TagSchema.validate({ name, index, status });
 
     if (error) {
       return NextResponse.json(
@@ -22,13 +22,13 @@ export async function POST(req) {
     }
 
     // ✅ Now proceed with DB insertion
-    const newlyCreatedCategory = await Category.create(extractCategory);
+    const newlyCreatedTag = await Tag.create(extractTag);
 
     return NextResponse.json(
       {
         success: true,
-        data: newlyCreatedCategory,
-        message: "Category added successfully",
+        data: newlyCreatedTag,
+        message: "Tag added successfully",
       },
       { status: 201 } // Created
     );
@@ -39,12 +39,12 @@ export async function POST(req) {
         success: false,
         message: "Something went wrong! Please try again",
       },
-      { status: 500 } // Internal Server Error
+      { status: 500 }
     );
   }
 }
 
-// fetch all category
+// fetch all Tag
 export async function GET(req) {
   try {
     await connectToDB();
@@ -55,13 +55,13 @@ export async function GET(req) {
     // Define filter conditionally
     const filter = status ? { status } : {}; // If status exists, filter by status, otherwise fetch all
 
-    // Fetch categories sorted by newest first (createdAt in descending order)
-    const categories = await Category.find(filter).sort({ createdAt: -1 });
+    // Fetch tag sorted by newest first (createdAt in descending order)
+    const extractAllTagFromDatabase = await Tag.find(filter).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
-      data: categories,
-      message: "Fetch category successfully",
+      data: extractAllTagFromDatabase,
+      message: "Fetch tag successfully",
     });
   } catch (error) {
     console.log(error.message);
@@ -75,15 +75,15 @@ export async function GET(req) {
   }
 }
 
-// delete all category
+// delete all tag
 export async function DELETE() {
   try {
-    await Category.deleteMany({});
+    await Tag.deleteMany({});
 
     return NextResponse.json({
       success: true,
       data: [],
-      message: "Deleted all category",
+      message: "Deleted all tag",
     });
   } catch (error) {
     console.log(error.message);
@@ -92,7 +92,7 @@ export async function DELETE() {
         success: false,
         message: "Something went wrong! Please try again",
       },
-      { status: 500 } // Internal Server Error
+      { status: 500 }
     );
   }
 }

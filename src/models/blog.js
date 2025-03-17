@@ -1,3 +1,4 @@
+import { boolean } from "joi";
 import mongoose from "mongoose";
 
 const BlogSchema = new mongoose.Schema(
@@ -19,6 +20,12 @@ const BlogSchema = new mongoose.Schema(
     twitterCard: { type: String, trim: true },
     twitterURL: { type: String, trim: true },
     twitterTitle: { type: String, trim: true },
+    longDescription: { type: String, trim: true },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
+    tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
+    featured: { type: Boolean, trim: true },
+    index: { type: Boolean, trim: true },
+    status: { type: Boolean, trim: true },
   },
   { timestamps: true }
 );

@@ -2,20 +2,29 @@ import { API_URL } from "@/config/constants";
 
 export const apiCall = async (endpoint, method = "GET", body = null, headers = {}) => {
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    let options = {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : null,
-    });
+      headers: { ...headers },
+    };
+
+    if (body instanceof FormData) {
+      // Let browser set the correct headers automatically
+      options.body = body;
+    } else if (body) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, options);
 
     let responseData;
     try {
-      responseData = await response.json(); // Attempt to parse JSON
+      responseData = await response.json();
     } catch (jsonError) {
-      responseData = { message: "Invalid JSON response", rawResponse: await response.text() }; // Handle invalid JSON
+      responseData = {
+        message: "Invalid JSON response",
+        rawResponse: await response.text(),
+      };
     }
 
     if (!response.ok) {
@@ -24,12 +33,12 @@ export const apiCall = async (endpoint, method = "GET", body = null, headers = {
       return {
         error: `HTTP Error ${response.status}`,
         status: response.status,
-        message: responseData.message || "Unknown error", // Extract error message if available
-        rawResponse: responseData, // Return full response data
+        message: responseData.message || "Unknown error",
+        rawResponse: responseData,
       };
     }
 
-    return responseData; // Return successful response data
+    return responseData;
   } catch (error) {
     console.error("API Fetch Error:", error.message);
     return { error: "Network error", status: 500 };
