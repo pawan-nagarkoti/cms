@@ -272,7 +272,7 @@ export default function Page() {
 
           {/* active category dropdown list */}
           {categoryLoading && <p>Loading...</p>}
-          {categoryList.length <= 0 && (
+          {categoryList?.length <= 0 && (
             <div className="space-y-2">
               <label className="font-medium text-gray-700">Category</label>
               <p className="mt-1 text-sm text-gray-500">
@@ -280,7 +280,7 @@ export default function Page() {
               </p>
             </div>
           )}
-          {categoryList.length > 0 && (
+          {categoryList?.length > 0 && (
             <>
               <SelectDropdown
                 label="Category"
@@ -294,13 +294,13 @@ export default function Page() {
 
           {/* active tag dropdown list */}
           {tagLoading && <p>Loading...</p>}
-          {tagList.length <= 0 && (
+          {tagList?.length <= 0 && (
             <div className="space-y-2">
               <label className="font-medium text-gray-700">Tag</label>
               <p className="mt-1 text-sm text-gray-500">Create Active Tag</p>
             </div>
           )}
-          {tagList.length > 0 && (
+          {tagList?.length > 0 && (
             <>
               <SelectDropdown
                 label="Tag"
