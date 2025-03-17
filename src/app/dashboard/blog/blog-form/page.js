@@ -10,6 +10,7 @@ import { useFetchActiveList } from "@/hooks/use-activeList";
 import React, { useEffect, useState } from "react";
 import { apiCall } from "@/lib/api";
 import { showToast } from "@/components/toastProvider";
+import useSlug from "@/hooks/use-slug";
 
 export default function Page() {
   const [isActive, setIsActive] = useState(false);
@@ -50,6 +51,7 @@ export default function Page() {
     twitterTitle: "",
   });
 
+  const slug = useSlug(blogFieldData?.title || "");
   // Handle Change for Input Fields
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,10 +62,11 @@ export default function Page() {
   };
 
   const handleBlogFormSubmit = async (e) => {
+    console.log(slug);
     e.preventDefault();
     const dataobj = {
       title: blogFieldData?.title,
-      slug: blogFieldData?.slug,
+      slug: slug,
       shortDescription: blogFieldData?.shortDescription,
       thumbnailImage: blogFieldData?.thumbnailImage,
       featuredImage: blogFieldData?.featuredImage,
@@ -98,8 +101,8 @@ export default function Page() {
 
     const data = new FormData();
     data.append("title", blogFieldData?.title);
-    data.append("slug", blogFieldData?.slug);
-    data.append("shortDescription", blogFieldData?.slug);
+    data.append("slug", slug);
+    data.append("shortDescription", blogFieldData?.shortDescription);
 
     const response = await apiCall(`blog`, "POST", data);
     console.log(response);
@@ -127,6 +130,7 @@ export default function Page() {
           </div>
           <div className="sm:col-span-6 col-span-12">
             <Input
+              value={slug}
               label="Slug"
               placeholder="Slug on the basis of title"
               disabled
