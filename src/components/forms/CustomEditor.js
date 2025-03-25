@@ -87,10 +87,12 @@ const CustomEditor = ({ onChange, label = "" }) => {
     }
 
     return () => {
-      if (editorInstance?.current) {
-        editorInstance?.current?.destroy()?.catch((error) => {
+      if (editorInstance.current) {
+        try {
+          editorInstance.current.destroy();
+        } catch (error) {
           console.error("Error destroying Editor.js instance:", error);
-        });
+        }
         editorInstance.current = null;
       }
     };
@@ -98,10 +100,8 @@ const CustomEditor = ({ onChange, label = "" }) => {
 
   return (
     <>
-      {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-      )}
-      <div ref={editorContainer} className="border p-3 rounded mt-4"></div>;
+      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
+      <div ref={editorContainer} className="border p-3 rounded mt-4"></div>
     </>
   );
 };

@@ -2,7 +2,7 @@ import React, { useId } from "react";
 import Select from "react-select";
 import { Label } from "@/components/ui/label";
 
-const SelectDropdown = ({ label = "", options = [], onChange, placeholder = "Select...", isMulti = false, styles = {}, isDisabled = false }) => {
+const SelectDropdown = ({ label = "", options = [], onChange, placeholder = "Select...", isMulti = false, styles = {}, isDisabled = false, value = [] }) => {
   const id = useId();
 
   return (
@@ -11,6 +11,7 @@ const SelectDropdown = ({ label = "", options = [], onChange, placeholder = "Sel
       <Select
         className="mt-3"
         id={id}
+        value={value}
         options={options}
         onChange={onChange}
         placeholder={placeholder}

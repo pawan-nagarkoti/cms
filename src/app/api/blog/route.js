@@ -113,7 +113,7 @@ export async function POST(req) {
 export async function GET() {
   try {
     await connectToDB();
-    const extractAllBlogsFromDatabase = await Blog.find({});
+    const extractAllBlogsFromDatabase = await Blog.find({}).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
@@ -128,6 +128,28 @@ export async function GET() {
         message: "Something went wrong! Please try again",
       },
       { status: 500 } // Internal Server Error
+    );
+  }
+}
+
+// delete all blogs
+export async function DELETE() {
+  try {
+    await Blog.deleteMany({});
+
+    return NextResponse.json({
+      success: true,
+      data: [],
+      message: "Deleted all Blogs",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Something went wrong! Please try again",
+      },
+      { status: 500 }
     );
   }
 }
