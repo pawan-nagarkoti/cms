@@ -15,10 +15,14 @@ export async function convertBase64(file) {
   if (!file) return null; // Handle null case
 
   const buffer = await file.arrayBuffer();
-  const base64File = `data:${file.type};base64,${Buffer.from(buffer).toString("base64")}`;
+  const base64File = `data:${file.type};base64,${Buffer.from(buffer).toString(
+    "base64"
+  )}`;
 
   const cloudinary = getCloudinaryInstance(); // Call the helper function
-  const response = await cloudinary.uploader.upload(base64File, { folder: "cms/blog" });
+  const response = await cloudinary.uploader.upload(base64File, {
+    folder: "cms/blog",
+  });
 
   return response.secure_url;
 }

@@ -19,6 +19,7 @@ export default function Page() {
       header: "S.NO",
       accessorKey: "id",
       // cell: (cellInfo) => pagination.serialNumberStartFrom + cellInfo.row.index,
+      cell: (cellInfo) => cellInfo.row.index + 1,
     },
     {
       header: "Title",

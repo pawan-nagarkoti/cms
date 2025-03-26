@@ -209,7 +209,7 @@ export default function Page() {
         {/* Editor */}
         <div className="mt-6">
           {/* <CustomEditor /> */}
-          <CustomEditor onChange={setEditorData} label="Long Description" />
+          <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
         </div>
 
         {/* File Upload Inputs */}

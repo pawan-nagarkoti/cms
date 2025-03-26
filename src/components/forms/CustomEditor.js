@@ -12,7 +12,7 @@ import Embed from "@editorjs/embed";
 import Checklist from "@editorjs/checklist";
 import Quote from "@editorjs/quote";
 
-const CustomEditor = ({ onChange, label = "" }) => {
+const CustomEditor = ({ onChange, label = "", data }) => {
   const editorInstance = useRef(null);
   const editorContainer = useRef(null);
 
@@ -22,6 +22,7 @@ const CustomEditor = ({ onChange, label = "" }) => {
         holder: editorContainer.current,
         autofocus: true,
         placeholder: "Enter your long description",
+        data: typeof data === "string" ? JSON.parse(data) : data || {},
         tools: {
           header: {
             class: Header,

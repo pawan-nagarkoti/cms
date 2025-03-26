@@ -60,21 +60,25 @@ const data = {
       ],
     },
     {
-      title: "Models",
+      title: "Manage Location",
       url: "#",
       icon: Bot,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Country",
+          url: "/dashboard/location/country",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "State",
+          url: "/dashboard/location/state",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Cities",
+          url: "/dashboard/location/cities",
+        },
+        {
+          title: "Microcities",
+          url: "/dashboard/location/microcities",
         },
       ],
     },
