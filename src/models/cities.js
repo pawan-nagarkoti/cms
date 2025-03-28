@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const StateSchema = new mongoose.Schema(
+const citiesSchema = new mongoose.Schema(
   {
     name: String,
     image: String,
@@ -10,7 +10,7 @@ const StateSchema = new mongoose.Schema(
     metaKeyword: String,
     description: String,
     longDescription: String,
-    activeCountry: [{ type: String }],
+    activeState: [{ type: String }],
     featured: { type: Boolean, default: false },
     index: { type: Boolean, default: false },
     status: { type: Boolean, default: false },
@@ -18,6 +18,6 @@ const StateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const State = mongoose.models.State || mongoose.model("State", StateSchema);
+const City = mongoose.models.City || mongoose.model("City", citiesSchema);
 
-export default State;
+export default City;

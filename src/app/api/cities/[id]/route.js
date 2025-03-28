@@ -1,11 +1,11 @@
 import connectToDB from "@/lib/db";
-import Country from "@/models/country";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { convertImagesIntoUrl } from "@/lib/helper";
+import City from "@/models/cities";
 
-// fetch single countries
-export default async function GET(req, { params }) {
+// fetch single city data
+export async function GET(req, { params }) {
   try {
     await connectToDB();
     const { id } = params;
@@ -13,23 +13,23 @@ export default async function GET(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing county ID" },
+        { success: false, message: "Invalid or missing city ID" },
         { status: 400 } // Bad Request
       );
     }
 
     // ✅ Fetch blog from MongoDB
-    const country = await Country.findById(id);
+    const city = await City.findById(id);
 
-    if (!country) {
+    if (!city) {
       return NextResponse.json(
-        { success: false, message: "country not found" },
+        { success: false, message: "city not found" },
         { status: 404 } // Not Found
       );
     }
 
     return NextResponse.json(
-      { success: true, data: country },
+      { success: true, data: city },
       { status: 200 } // ✅ 200 OK for successful retrieval
     );
   } catch (error) {
@@ -44,44 +44,47 @@ export default async function GET(req, { params }) {
   }
 }
 
-// delete country on the baisi of id parms
+// delte single city
 export async function DELETE(req, { params }) {
   try {
     await connectToDB();
-    const { id } = params; // ✅ Get ID from dynamic route
+    const { id } = params;
 
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing country ID" },
+        { success: false, message: "Invalid or missing city ID" },
         { status: 400 } // Bad Request
       );
     }
 
     // ✅ Try deleting the category
-    const deletedCountry = await Country.findByIdAndDelete(id);
+    const deletedCity = await City.findByIdAndDelete(id);
 
-    if (!deletedCountry) {
+    if (!deletedCity) {
       return NextResponse.json(
-        { success: false, message: "Country not found" },
+        { success: false, message: "City not found" },
         { status: 404 } // Not Found
       );
     }
 
     return NextResponse.json(
-      { success: true, message: "Country deleted successfully" },
+      { success: true, message: "City deleted successfully" },
       { status: 200 } // ✅ 200 OK for successful deletion
     );
   } catch (error) {
-    console.error("Error deleting country:", error?.message);
+    console.log(error.message);
     return NextResponse.json(
-      { success: false, message: "Something went wrong! Please try again" },
-      { status: 500 } // Internal Server Error
+      {
+        success: false,
+        message: "Something went wrong! Please try again",
+      },
+      { status: 500 }
     );
   }
 }
 
-// updated country
+// update city
 export async function PUT(req, { params }) {
   try {
     await connectToDB();
@@ -90,7 +93,7 @@ export async function PUT(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing blog ID" },
+        { success: false, message: "Invalid or missing city ID" },
         { status: 400 } // Bad Request
       );
     }
@@ -98,11 +101,11 @@ export async function PUT(req, { params }) {
     // ✅ Parse the request body
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
-    const countryUrl = await convertImagesIntoUrl(data?.image, "image", formData); // this line is used for if we have new image then convert into the URL otherwise return as it is image url.
+    const cityUrl = await convertImagesIntoUrl(data?.image, "image", formData); // this line is used for if we have new image then convert into the URL otherwise return as it is image url.
 
-    const countryData = {
+    const cityData = {
       name: data?.name,
-      image: countryUrl || "",
+      image: cityUrl || "",
       abbrevation: data?.abbrevation,
       metaTitle: data?.metaTitle,
       metaDescription: data?.metaDescription,
@@ -110,13 +113,13 @@ export async function PUT(req, { params }) {
       description: data?.description,
     };
 
-    const updatedCountry = await Country.findOneAndUpdate({ _id: id }, countryData, { new: true });
+    const updatedCity = await City.findOneAndUpdate({ _id: id }, cityData, { new: true });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Country updated successfully",
-        data: updatedCountry,
+        message: "City updated successfully",
+        data: updatedCity,
       },
       { status: 200 }
     );
