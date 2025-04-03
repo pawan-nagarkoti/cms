@@ -1,25 +1,49 @@
-import { convertBase64 } from "@/lib/cloudinary";
 import connectToDB from "@/lib/db";
-import City from "@/models/cities";
 import { NextResponse } from "next/server";
+import Microcities from "@/models/microcities";
+import State from "@/models/state";
+import City from "@/models/cities";
 
-// fetch all cities
+// fetch all microcities
 export async function GET(req) {
   try {
     await connectToDB();
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const type = searchParams.get("type");
+    const selectedCountryId = searchParams.get("countryId");
+    const selectedStateId = searchParams.get("stateId");
 
     // Define filter conditionally
     const filter = status ? { status } : {}; // If status exists, filter by status, otherwise fetch all
 
-    const cities = await City.find(filter);
+    // get all the active states on the basis of active country
+    if (type === "country") {
+      const activeStates = await State.find({ activeCountry: selectedCountryId });
+      return NextResponse.json({
+        success: true,
+        data: activeStates,
+        message: "Fetched active states on the bais of country id",
+      });
+    }
+
+    // get all the active city on the basis of active state
+    if (type === "state") {
+      const activeCity = await City.find({ activeState: selectedStateId });
+      return NextResponse.json({
+        success: true,
+        data: activeCity,
+        message: "Fetched active city on the bais of state id",
+      });
+    }
+
+    const microcities = await Microcities.find(filter);
     return NextResponse.json(
       {
         success: true,
-        data: cities,
-        message: "Fetch city successfully",
+        data: microcities,
+        message: "Fetch microcities successfully",
       },
       { status: 200 }
     );
@@ -35,16 +59,16 @@ export async function GET(req) {
   }
 }
 
-// delete all cities
+// delete all microcities
 export async function DELETE() {
   try {
-    await City.deleteMany({});
+    await Microcities.deleteMany({});
 
     return NextResponse.json(
       {
         success: true,
         data: [],
-        message: "Deleted all cities",
+        message: "Deleted all Microcities",
       },
       { status: 200 }
     );
@@ -60,52 +84,34 @@ export async function DELETE() {
   }
 }
 
-// add new city
+// add new microcities
 export async function POST(req) {
   try {
     await connectToDB();
     const formData = await req.formData();
-    const cityImage = formData.get("image");
     const data = Object.fromEntries(formData.entries());
 
-    let citiesImageUrl = "";
-
-    // Convert File to base64 and upload to Cloudinary
-    if (cityImage) {
-      citiesImageUrl = await convertBase64(cityImage);
-    }
-
-    // ✅ Extract values manually when indexed keys are used
-    const cities = [];
-
-    // Iterate through all formData entries
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith("activeState[")) {
-        cities.push(value);
-      }
-    }
-
-    const cityData = {
+    const microcityData = {
       name: data?.name,
-      image: citiesImageUrl || "",
-      abbrevation: data?.abbrevation,
-      activeState: cities || [],
       metaTitle: data?.metaTitle,
       metaDescription: data?.metaDescription,
       metaKeyword: data?.metaKeyword,
       description: data?.description,
       longDescription: data?.longDescription,
+      activeCountry: data?.activeCountry,
+      activeState: data?.activeState,
+      activeCity: data?.activeCity,
       featured: data?.featured,
       index: data?.index,
       status: data?.status,
     };
 
-    const newlyCitiesCreated = await City.create(cityData);
+    const newlyMicrocityCreated = await Microcities.create(microcityData);
     return NextResponse.json(
       {
         success: true,
-        data: newlyCitiesCreated,
-        message: "city added successfully",
+        data: newlyMicrocityCreated,
+        message: "microcity added successfully",
       },
       { status: 201 }
     );

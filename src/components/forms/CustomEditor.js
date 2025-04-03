@@ -22,7 +22,7 @@ const CustomEditor = ({ onChange, label = "", data }) => {
         holder: editorContainer.current,
         autofocus: true,
         placeholder: "Enter your long description",
-        data: typeof data === "string" ? JSON.parse(data) : data || {},
+        data: typeof data === "string" ? JSON?.parse(data) : data || {},
         tools: {
           header: {
             class: Header,

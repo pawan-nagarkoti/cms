@@ -1,8 +1,7 @@
 import connectToDB from "@/lib/db";
-import Country from "@/models/country";
+import Microcities from "@/models/microcities";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import { convertImagesIntoUrl } from "@/lib/helper";
 
 // fetch single countries
 export async function GET(req, { params }) {
@@ -13,23 +12,23 @@ export async function GET(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing county ID" },
+        { success: false, message: "Invalid or missing microsite ID" },
         { status: 400 } // Bad Request
       );
     }
 
     // ✅ Fetch blog from MongoDB
-    const country = await Country.findById(id);
+    const microcity = await Microcities.findById(id);
 
-    if (!country) {
+    if (!microcity) {
       return NextResponse.json(
-        { success: false, message: "country not found" },
+        { success: false, message: "microcity not found" },
         { status: 404 } // Not Found
       );
     }
 
     return NextResponse.json(
-      { success: true, data: country },
+      { success: true, data: microcity },
       { status: 200 } // ✅ 200 OK for successful retrieval
     );
   } catch (error) {
@@ -44,7 +43,7 @@ export async function GET(req, { params }) {
   }
 }
 
-// delete country on the baisi of id parms
+// delete microcity on the basis of id parms
 export async function DELETE(req, { params }) {
   try {
     await connectToDB();
@@ -53,27 +52,26 @@ export async function DELETE(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing country ID" },
+        { success: false, message: "Invalid or missing microcity ID" },
         { status: 400 } // Bad Request
       );
     }
 
-    // ✅ Try deleting the category
-    const deletedCountry = await Country.findByIdAndDelete(id);
+    const deletedMicrocity = await Microcities.findByIdAndDelete(id);
 
-    if (!deletedCountry) {
+    if (!deletedMicrocity) {
       return NextResponse.json(
-        { success: false, message: "Country not found" },
+        { success: false, message: "Microcity not found" },
         { status: 404 } // Not Found
       );
     }
 
     return NextResponse.json(
-      { success: true, message: "Country deleted successfully" },
+      { success: true, message: "microcity deleted successfully" },
       { status: 200 } // ✅ 200 OK for successful deletion
     );
   } catch (error) {
-    console.error("Error deleting country:", error?.message);
+    console.error("Error deleting microcity:", error?.message);
     return NextResponse.json(
       { success: false, message: "Something went wrong! Please try again" },
       { status: 500 } // Internal Server Error
@@ -81,7 +79,7 @@ export async function DELETE(req, { params }) {
   }
 }
 
-// updated country
+// updated microcity
 export async function PUT(req, { params }) {
   try {
     await connectToDB();
@@ -90,7 +88,7 @@ export async function PUT(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing blog ID" },
+        { success: false, message: "Invalid or missing microcity ID" },
         { status: 400 } // Bad Request
       );
     }
@@ -98,25 +96,29 @@ export async function PUT(req, { params }) {
     // ✅ Parse the request body
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
-    const countryUrl = await convertImagesIntoUrl(data?.image, "image", formData); // this line is used for if we have new image then convert into the URL otherwise return as it is image url.
 
-    const countryData = {
+    const microcityData = {
       name: data?.name,
-      image: countryUrl || "",
-      abbrevation: data?.abbrevation,
       metaTitle: data?.metaTitle,
       metaDescription: data?.metaDescription,
       metaKeyword: data?.metaKeyword,
       description: data?.description,
+      longDescription: data?.longDescription,
+      activeCountry: data?.activeCountry,
+      activeState: data?.activeState,
+      activeCity: data?.activeCity,
+      featured: data?.featured,
+      index: data?.index,
+      status: data?.status,
     };
 
-    const updatedCountry = await Country.findOneAndUpdate({ _id: id }, countryData, { new: true });
+    const updatedMicrocity = await Microcities.findOneAndUpdate({ _id: id }, microcityData, { new: true });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Country updated successfully",
-        data: updatedCountry,
+        message: "Microcity updated successfully",
+        data: updatedMicrocity,
       },
       { status: 200 }
     );
