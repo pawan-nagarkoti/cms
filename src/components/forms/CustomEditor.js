@@ -22,7 +22,7 @@ const CustomEditor = ({ onChange, label = "", data }) => {
         holder: editorContainer.current,
         autofocus: true,
         placeholder: "Enter your long description",
-        data: typeof data === "string" ? JSON?.parse(data) : data || {},
+        data,
         tools: {
           header: {
             class: Header,
@@ -41,30 +41,75 @@ const CustomEditor = ({ onChange, label = "", data }) => {
             class: Table,
             inlineToolbar: true,
           },
+
+          // without loader image
+          // image: {
+          //   class: ImageTool,
+          //   config: {
+          //     uploader: {
+          //       async uploadByFile(file) {
+          //         const formData = new FormData();
+          //         formData.append("file", file);
+
+          //         const response = await fetch("/api/upload", {
+          //           method: "POST",
+          //           body: formData,
+          //         });
+
+          //         const data = await response.json();
+
+          //         return {
+          //           success: 1,
+          //           file: {
+          //             url: data.url,
+          //           },
+          //         };
+          //       },
+          //     },
+          //   },
+          // },
+
+          // with loader image
           image: {
             class: ImageTool,
             config: {
               uploader: {
-                uploadByFile(file) {
-                  return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => {
-                      resolve({
-                        success: 1,
-                        file: {
-                          url: reader.result, // ✅ Base64 Data URL
-                        },
-                      });
+                async uploadByFile(file) {
+                  // Start custom loader
+                  document.body.classList.add("uploading-loader");
+
+                  const formData = new FormData();
+                  formData.append("file", file);
+
+                  try {
+                    const response = await fetch("/api/upload", {
+                      method: "POST",
+                      body: formData,
+                    });
+
+                    const data = await response.json();
+
+                    return {
+                      success: 1,
+                      file: {
+                        url: data.url,
+                      },
                     };
-                    reader.onerror = (error) => reject(error);
-                  });
+                  } catch (error) {
+                    return {
+                      success: 0,
+                      error: "Upload failed",
+                    };
+                  } finally {
+                    // End custom loader
+                    document.body.classList.remove("uploading-loader");
+                  }
                 },
               },
             },
           },
-          code: CodeTool,
-          embed: Embed,
+          CodeTool,
+          Embed,
           checklist: {
             class: Checklist,
             inlineToolbar: true,

@@ -8,8 +8,6 @@
   }
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -82,8 +80,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -91,4 +87,19 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.image-tool__image-preloader {
+  width: 20rem !important;
+  height: 20rem !important;
+  border-radius: 0 !important;
+}
+.image-tool__image-preloader::after {
+  content: none !important;
+  display: none !important;
+}
+
+.uploading-loader {
+  cursor: wait;
+  opacity: 0.6;
 }

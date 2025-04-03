@@ -1,6 +1,11 @@
 "use client";
 
-import CustomEditor from "@/components/forms/CustomEditor";
+import dynamic from "next/dynamic";
+
+const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
+  ssr: false,
+});
+
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
 import { CustomToggle } from "@/components/forms/Toggle";
@@ -56,7 +61,8 @@ export default function page() {
     data.append("index", isIndex);
     data.append("status", isActive);
 
-    const response = await apiCall(`country`, "POST", data);
+    // const response = await apiCall(`country`, "POST", data);
+    const response = countryId ? await apiCall(`country/${countryId}`, "PUT", data) : await apiCall(`country`, "POST", data);
 
     if (response?.error) {
       showToast(response.message);
@@ -87,7 +93,7 @@ export default function page() {
         metaKeywords: response?.data?.metaKeyword || "",
       });
       setCountryImage(response?.data?.image);
-      setEditorData(response?.data?.description || null);
+      setEditorData(JSON.parse(response.data.description) || "");
       setIsFeatured(response?.data?.featured || false);
       setIndex(response?.data?.index || false);
       setIsActive(response?.data?.status || false);

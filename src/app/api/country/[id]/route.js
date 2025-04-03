@@ -121,7 +121,7 @@ export async function PUT(req, { params }) {
       { status: 200 }
     );
   } catch (error) {
-    console.log(error.message);
+    console.log("update country error", error.message);
     return NextResponse.json(
       {
         success: false,
