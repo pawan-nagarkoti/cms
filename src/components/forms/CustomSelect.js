@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 
 const SelectDropdown = ({ label = "", options = [], onChange, placeholder = "Select...", isMulti = false, styles = {}, isDisabled = false, value = [] }) => {
   const id = useId();
-
   return (
     <div>
       {label && <Label htmlFor={id}>{label}</Label>}

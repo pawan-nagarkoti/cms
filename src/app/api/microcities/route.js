@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Microcities from "@/models/microcities";
 import State from "@/models/state";
 import City from "@/models/cities";
+import Country from "@/models/country";
 
 // fetch all microcities
 export async function GET(req) {
@@ -90,6 +91,10 @@ export async function POST(req) {
     await connectToDB();
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
+
+    console.log(data?.activeCountry);
+    const activeCountryDetail = await Country.findById(data?.activeCountry);
+    console.log("ac", activeCountryDetail?.name);
 
     const microcityData = {
       name: data?.name,

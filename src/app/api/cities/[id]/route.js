@@ -103,6 +103,15 @@ export async function PUT(req, { params }) {
     const data = Object.fromEntries(formData.entries());
     const cityUrl = await convertImagesIntoUrl(data?.image, "image", formData); // this line is used for if we have new image then convert into the URL otherwise return as it is image url.
 
+    const cities = [];
+
+    // Iterate through all formData entries
+    for (const [key, value] of formData.entries()) {
+      if (key.startsWith("activeState[")) {
+        cities.push(value);
+      }
+    }
+
     const cityData = {
       name: data?.name,
       image: cityUrl || "",
@@ -111,6 +120,7 @@ export async function PUT(req, { params }) {
       metaDescription: data?.metaDescription,
       metaKeyword: data?.metaKeyword,
       description: data?.description,
+      activeState: cities,
     };
 
     const updatedCity = await City.findOneAndUpdate({ _id: id }, cityData, { new: true });
@@ -124,11 +134,11 @@ export async function PUT(req, { params }) {
       { status: 200 }
     );
   } catch (error) {
-    console.log(error.message);
+    console.log("update citiy error", error.message);
     return NextResponse.json(
       {
         success: false,
-        message: "Something went wrong! Please try again",
+        message: error?.message,
       },
       { status: 500 }
     );
