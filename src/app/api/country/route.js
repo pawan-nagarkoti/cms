@@ -87,6 +87,7 @@ export async function POST(req) {
 // delete all countries
 export async function DELETE() {
   try {
+    await connectToDB();
     await Country.deleteMany({});
 
     return NextResponse.json(

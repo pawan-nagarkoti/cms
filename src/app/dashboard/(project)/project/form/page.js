@@ -1,11 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
-  ssr: false,
-});
-
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
 import { CustomToggle } from "@/components/forms/Toggle";
@@ -23,35 +17,35 @@ export default function page() {
   const [isActive, setIsActive] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isIndex, setIndex] = useState(false);
-  const [editorData, setEditorData] = useState(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const microcityId = searchParams.get("id");
+  const projectId = searchParams.get("id");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [stateOnTheBasisOfSelectedCountry, setStateOnTheBasisOfSelectedCountry] = useState(null);
   const [cityOnTheBasisOfSelectedState, setCityOnTheBasisOfSelectedState] = useState(null);
 
+  const [selectedBuilder, setSelectedBuilder] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
   const [selectedState, setSelectedState] = useState([]);
   const [selectedCity, setSelectedCity] = useState([]);
 
-  const [microcitiesFormData, setMicrocitiesFormData] = useState({
-    microcityName: "",
-    abberivation: "",
-    metaTitle: "",
-    metaDescription: "",
-    metaKeywords: "",
+  const [projectFormData, setProjectFormData] = useState({
+    name: "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setMicrocitiesFormData({
-      ...microcitiesFormData,
+    setProjectFormData({
+      ...projectFormData,
       [name]: value,
     });
   };
 
   const { list: countryList, isLoading: countryLoading, error: countryError } = useFetchActiveList(`country?status=true`); // fetch state whose status is active:true
+  const { list: builderList, isLoading: builderLoading, error: builderError } = useFetchActiveList(`builder?status=true`); // fetch builder whose status is active:true
+  const { list: categoryList, isLoading: categoryLoading, error: categoryError } = useFetchActiveList(`propertyCategory?status=true`); // fetch builder whose status is active:true
 
   //   fetch active state list on the basis of selected country from the country dropdown
   const fetchActiveStateListOnTheBasisOfSelectedCounty = async () => {
@@ -82,55 +76,54 @@ export default function page() {
   }, [selectedState]);
 
   // submit city form
-  const handleCitiesFormData = async (e) => {
+  const handleProjectFormData = async (e) => {
     e.preventDefault();
 
     const data = new FormData();
-    data.append("activeCountry", selectedCountry?.value);
-    data.append("activeState", selectedState?.value);
-    data.append("activeCity", selectedCity?.value);
-    data.append("name", microcitiesFormData?.microcityName);
-    data.append("metaTitle", microcitiesFormData?.metaTitle);
-    data.append("metaDescription", microcitiesFormData?.metaDescription);
-    data.append("metaKeyword", microcitiesFormData?.metaKeywords);
-    data.append("longDescription", JSON.stringify(editorData));
+    data.append("name", projectFormData?.name);
+
+    data.append("builder", selectedBuilder?.value);
+    data.append("propertyCategory", selectedCategory?.value);
+    data.append("country", selectedCountry?.value);
+    data.append("state", selectedState?.value);
+    data.append("city", selectedCity?.value);
+
     data.append("featured", isFeatured);
     data.append("index", isIndex);
     data.append("status", isActive);
 
-    const response = microcityId ? await apiCall(`microcities/${microcityId}`, "PUT", data) : await apiCall(`microcities`, "POST", data);
+    console.log("selectedBuilder", selectedBuilder);
+    const response = projectId ? await apiCall(`project/${projectId}`, "PUT", data) : await apiCall(`project`, "POST", data);
 
     if (response?.error) {
       showToast(response.message);
     } else {
       showToast(response.message, "success");
-      router.push("/dashboard/location/microcities"); // redirect to the dashboard city page
+      router.push("/dashboard/project"); // redirect to the dashboard project page
     }
   };
 
   // get edit form data on the basis of id
   const fetchCityDataOnTheBasisOfId = async () => {
-    if (!microcityId) {
+    if (!projectId) {
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
 
-    const response = await apiCall(`microcities/${microcityId}`);
+    const response = await apiCall(`project/${projectId}`);
     if (response?.data) {
-      setMicrocitiesFormData({
-        microcityName: response?.data?.name || "",
-        abberivation: response?.data?.abbrevation || "",
-        metaTitle: response?.data?.metaTitle || "",
-        metaDescription: response?.data?.metaDescription || "",
-        metaKeywords: response?.data?.metaKeyword || "",
+      setProjectFormData({
+        name: response?.data?.name || "",
       });
 
-      setSelectedCountry({ label: response?.data?.activeCountry?.name, value: response?.data?.activeCountry?._id });
-      setSelectedState({ label: response?.data?.activeState?.name, value: response?.data?.activeState?._id });
-      setSelectedCity({ label: response?.data?.activeCity?.name, value: response?.data?.activeCity?._id });
-      setEditorData(JSON.parse(response.data.longDescription) || "");
+      setSelectedBuilder({ label: response?.data?.builder?.name, value: response?.data?.builder?._id });
+      setSelectedCategory({ label: response?.data?.propertyCategory?.name, value: response?.data?.propertyCategory?._id });
+      setSelectedCountry({ label: response?.data?.country?.name, value: response?.data?.country?._id });
+      setSelectedState({ label: response?.data?.state?.name, value: response?.data?.state?._id });
+      setSelectedCity({ label: response?.data?.city?.name, value: response?.data?.city?._id });
+
       setIsFeatured(response?.data?.featured || false);
       setIndex(response?.data?.index || false);
       setIsActive(response?.data?.status || false);
@@ -140,7 +133,7 @@ export default function page() {
   };
   useEffect(() => {
     fetchCityDataOnTheBasisOfId();
-  }, [microcityId, countryList]);
+  }, [projectId, countryList]);
 
   //   get selected state object
   const handleSelectedState = (selectedOption) => {
@@ -156,8 +149,28 @@ export default function page() {
 
   return (
     <>
-      <form onSubmit={handleCitiesFormData}>
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+      <form onSubmit={handleProjectFormData}>
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
+          <div className="sm:col-span-6 col-span-12">
+            <Input label="Project Name" placeholder="Enter your project name" name="name" value={projectFormData?.name} onChange={handleChange} />
+          </div>
+          <div className="sm:col-span-6 col-span-12">
+            <>
+              <SelectDropdown label="Builder" value={selectedBuilder} options={builderList} onChange={setSelectedBuilder} placeholder="Choose an builder" />
+            </>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
+          <div className="sm:col-span-6 col-span-12">
+            <SelectDropdown
+              label="Category "
+              value={selectedCategory}
+              options={categoryList}
+              onChange={setSelectedCategory}
+              placeholder="Choose an property category"
+            />
+          </div>
           <div className="sm:col-span-6 col-span-12">
             {countryLoading && <p>Loading...</p>}
             {!countryLoading && countryList?.length <= 0 && (
@@ -172,7 +185,9 @@ export default function page() {
               </>
             )}
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
           <div className="sm:col-span-6 col-span-12">
             {stateOnTheBasisOfSelectedCountry?.length <= 0 && (
               <div className="space-y-2">
@@ -192,9 +207,7 @@ export default function page() {
               </>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
           <div className="sm:col-span-6 col-span-12">
             {cityOnTheBasisOfSelectedState?.length <= 0 && (
               <div className="space-y-2">
@@ -214,39 +227,6 @@ export default function page() {
               </>
             )}
           </div>
-
-          <div className="sm:col-span-6 col-span-12">
-            <Input
-              label="Microcity Name *"
-              placeholder="Enter your city name"
-              name="microcityName"
-              value={microcitiesFormData?.microcityName}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
-          <div className="sm:col-span-6 col-span-12">
-            <Input label="Meta Title" placeholder="Enter your title" name="metaTitle" value={microcitiesFormData?.metaTitle} onChange={handleChange} />
-          </div>
-          <div className="sm:col-span-6 col-span-12">
-            <Input
-              label="Meta Keywords"
-              placeholder="Enter your meta keywords"
-              name="metaKeywords"
-              value={microcitiesFormData?.metaKeywords}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <Textarea label="Meta Description" name="metaDescription" value={microcitiesFormData?.metaDescription} onChange={handleChange} />
-        </div>
-
-        <div className="mt-6">
-          <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
         </div>
 
         <div className="grid gap-3 mt-6">

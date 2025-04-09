@@ -1,9 +1,10 @@
 import connectToDB from "@/lib/db";
-import Microcities from "@/models/microcities";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
+import Project from "@/models/project";
+import "@/lib/all-modals"; // It must be add whenever we are using populate method because its serve in the memory
 
-// fetch single countries
+// fetch single project
 export async function GET(req, { params }) {
   try {
     await connectToDB();
@@ -12,26 +13,19 @@ export async function GET(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing microsite ID" },
+        { success: false, message: "Invalid or missing project ID" },
         { status: 400 } // Bad Request
       );
     }
 
     // ✅ Fetch blog from MongoDB
-    // const microcity = await Microcities.findById(id);
-    const data = await Microcities.findById(id).populate("activeCountry").populate("activeState").populate("activeCity");
+    const project = await Project.findById(id).populate("country").populate("builder").populate("propertyCategory").populate("state").populate("city");
 
-    if (!data) {
-      return NextResponse.json(
-        { success: false, message: "microcity not found" },
-        { status: 404 } // Not Found
-      );
+    if (!project) {
+      return NextResponse.json({ success: false, message: "project not found" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { success: true, data },
-      { status: 200 } // ✅ 200 OK for successful retrieval
-    );
+    return NextResponse.json({ success: true, data: project }, { status: 200 });
   } catch (error) {
     console.log(error.message);
     return NextResponse.json(
@@ -44,7 +38,7 @@ export async function GET(req, { params }) {
   }
 }
 
-// delete microcity on the basis of id parms
+// delete single project
 export async function DELETE(req, { params }) {
   try {
     await connectToDB();
@@ -53,34 +47,34 @@ export async function DELETE(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing microcity ID" },
+        { success: false, message: "Invalid or missing project ID" },
         { status: 400 } // Bad Request
       );
     }
 
-    const deletedMicrocity = await Microcities.findByIdAndDelete(id);
+    const deletedProject = await Project.findByIdAndDelete(id);
 
-    if (!deletedMicrocity) {
+    if (!deletedProject) {
       return NextResponse.json(
-        { success: false, message: "Microcity not found" },
+        { success: false, message: "Project not found" },
         { status: 404 } // Not Found
       );
     }
 
     return NextResponse.json(
-      { success: true, message: "microcity deleted successfully" },
+      { success: true, message: "Project deleted successfully" },
       { status: 200 } // ✅ 200 OK for successful deletion
     );
   } catch (error) {
-    console.error("Error deleting microcity:", error?.message);
+    console.error("Error deleting Project:", error?.message);
     return NextResponse.json(
-      { success: false, message: "Something went wrong! Please try again" },
+      { success: false, message: error?.message },
       { status: 500 } // Internal Server Error
     );
   }
 }
 
-// updated microcity
+// update porjects
 export async function PUT(req, { params }) {
   try {
     await connectToDB();
@@ -89,7 +83,7 @@ export async function PUT(req, { params }) {
     // ✅ Validate ID
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, message: "Invalid or missing microcity ID" },
+        { success: false, message: "Invalid or missing project ID" },
         { status: 400 } // Bad Request
       );
     }
@@ -98,28 +92,25 @@ export async function PUT(req, { params }) {
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
 
-    const microcityData = {
+    const projectData = {
       name: data?.name,
-      metaTitle: data?.metaTitle,
-      metaDescription: data?.metaDescription,
-      metaKeyword: data?.metaKeyword,
-      description: data?.description,
-      longDescription: data?.longDescription,
-      activeCountry: data?.activeCountry,
-      activeState: data?.activeState,
-      activeCity: data?.activeCity,
+      builder: data?.builder,
+      propertyCategory: data?.propertyCategory,
+      country: data?.country,
+      state: data?.state,
+      city: data?.city,
       featured: data?.featured,
       index: data?.index,
       status: data?.status,
     };
 
-    const updatedMicrocity = await Microcities.findOneAndUpdate({ _id: id }, microcityData, { new: true });
+    const updatedProject = await Project.findOneAndUpdate({ _id: id }, projectData, { new: true });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Microcity updated successfully",
-        data: updatedMicrocity,
+        message: "Project updated successfully",
+        data: updatedProject,
       },
       { status: 200 }
     );

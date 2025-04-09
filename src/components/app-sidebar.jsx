@@ -83,48 +83,48 @@ const data = {
       ],
     },
     {
-      title: "Documentation",
+      title: "Manage Project",
       url: "#",
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "Builder",
+          url: "/dashboard/builder",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Project",
+          url: "/dashboard/project",
         },
       ],
     },
     {
-      title: "Settings",
+      title: "Manage Properties",
       url: "#",
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: "Properties Categories",
+          url: "/dashboard/propertyCategory",
         },
         {
-          title: "Team",
-          url: "#",
+          title: "Properties Sub Categories",
+          url: "/dashboard/propertySubCategory",
         },
         {
-          title: "Billing",
-          url: "#",
+          title: "Topologies",
+          url: "/dashboard/topology",
         },
         {
-          title: "Limits",
-          url: "#",
+          title: "Amenities",
+          url: "/dashboard/amenities",
+        },
+        {
+          title: "Facilities",
+          url: "/dashboard/facility",
+        },
+        {
+          title: "Properties",
+          url: "/dashboard/property",
         },
       ],
     },

@@ -39,11 +39,16 @@ export async function GET(req) {
       });
     }
 
-    const microcities = await Microcities.find(filter);
+    // These are two way i can populate the microcities
+    // const data = await Microcities.find().populate([{ path: "activeCountry" }, { path: "activeState" }, { path: "activeCity" }]);
+    const data = await Microcities.find(filter).populate("activeCountry").populate("activeState").populate("activeCity").sort({ createdAt: -1 });
+
+    // const microcities = await Microcities.find(filter);
     return NextResponse.json(
       {
         success: true,
-        data: microcities,
+        // data: microcities,
+        data,
         message: "Fetch microcities successfully",
       },
       { status: 200 }
@@ -53,7 +58,8 @@ export async function GET(req) {
     return NextResponse.json(
       {
         success: false,
-        message: "Something went wrong! Please try again",
+        // message: "Something went wrong! Please try again",
+        message: error?.message,
       },
       { status: 500 }
     );

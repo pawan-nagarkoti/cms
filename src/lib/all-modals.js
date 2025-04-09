@@ -1,0 +1,10 @@
+import "@/models/builder";
+import "@/models/category";
+import "@/models/cities";
+import "@/models/country";
+import "@/models/microcities";
+import "@/models/project";
+import "@/models/propertyCategory";
+import "@/models/state";
+import "@/models/tag";
+import "@/models/propertySubCategory";
