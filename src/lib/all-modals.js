@@ -8,3 +8,4 @@ import "@/models/propertyCategory";
 import "@/models/state";
 import "@/models/tag";
 import "@/models/propertySubCategory";
+import "@/models/topology";
