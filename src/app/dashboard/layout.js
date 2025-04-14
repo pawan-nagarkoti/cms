@@ -1,5 +1,6 @@
 "use client";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ToastProvider } from "@/components/toastProvider";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({ children }) {
@@ -18,7 +19,10 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <div className="p-4">{children}</div>
+        <div className="p-4">
+          {children}
+          <ToastProvider />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
