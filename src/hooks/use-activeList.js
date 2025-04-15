@@ -13,6 +13,7 @@ export const useFetchActiveList = (url) => {
         const formattedList = apiResponse?.data?.map((v) => ({
           label: v?.name || "",
           value: v?._id || "",
+          builderName: v?.builder?.name,
         }));
         setList(formattedList);
       } catch (err) {

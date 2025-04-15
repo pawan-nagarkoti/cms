@@ -1,26 +1,17 @@
 import mongoose from "mongoose";
 
-const FloorSchema = new mongoose.Schema(
+const FaqSchema = new mongoose.Schema(
   {
-    type: {
+    question: {
       type: String,
     },
-    price: {
-      type: String,
-    },
-    title: {
-      type: String,
-    },
-    alt: {
-      type: String,
-    },
-    image: {
+    answer: {
       type: String,
     },
   },
   { timestamps: true }
 );
 
-const Floor = mongoose.models.Floor || mongoose.model("Floor", FloorSchema);
+const Faq = mongoose.models.Faq || mongoose.model("Faq", FaqSchema);
 
-export default Floor;
+export default Faq;

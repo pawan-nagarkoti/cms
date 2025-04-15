@@ -38,7 +38,9 @@ export function NavMain({ items }) {
                         {/* <a href={subItem.url}>
                           <span>{subItem.title}</span>
                         </a> */}
-                        <Link href={subItem.url}>{subItem.title}</Link>
+                        <Link href={subItem.url} className="py-[18px]">
+                          {subItem.title}
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   ))}
