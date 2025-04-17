@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CustomAccordion } from "@/components/custom-accordion";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
@@ -10,8 +10,15 @@ import SelectDropdown from "@/components/forms/CustomSelect";
 import { useFetchActiveList } from "@/hooks/use-activeList";
 import { Button } from "@/components/ui/button";
 import useSlug from "@/hooks/use-slug";
-import { possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
-import CustomEditor from "@/components/forms/CustomEditor";
+import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
+// import CustomEditor from "@/components/forms/CustomEditor";
+import { addProperty, fetchPropertyMicrocity, fetchPropertySubCategory, fetchPropertyTopology } from "@/actions/project-actions";
+
+import dynamic from "next/dynamic";
+
+const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
+  ssr: false,
+});
 
 export default function page() {
   const [isActive, setIsActive] = useState(false);
@@ -19,6 +26,19 @@ export default function page() {
   const [isIndex, setIndex] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [editorData, setEditorData] = useState(null);
+
+  const [hasSubCategory, setHasSubCategory] = useState([]); // get sub category form actions/mution
+  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+
+  const [hasTopology, setHasTopology] = useState([]); // get topology form actions/mution
+  const [selectedTopology, setSelectedTopology] = useState(null);
+
+  const [hasMicrocity, setHasMicrocity] = useState([]); // get microcity form actions/mution
+  const [selectedMicrocity, setSelectedMicrocity] = useState(null);
+
+  const [selectedAmenties, setSelectedAmenties] = useState(null);
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [selectedRelatedProperties, setSelectedRelatedProperties] = useState(null);
 
   const [projectFormData, setProjectFormData] = useState({
     address: "",
@@ -30,27 +50,161 @@ export default function page() {
     minUnit: "",
     maxPrice: "",
     maxUnit: "",
+    minSize: "",
+    minSizeUnit: "",
+    maxSize: "",
+    maxSizeUnit: "",
     completionOn: "",
     possionNumber: "",
     possionWMY: "",
     order: "",
+    featuredImage: "",
+    featuredImageTitle: "",
+    featuredImageAlt: "",
   });
   const slug = useSlug(projectFormData?.propertyTitle || "");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProjectFormData({
-      ...projectFormData,
-      [name]: value,
-    });
+  const handleChange = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setProjectFormData({
+        ...projectFormData,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setProjectFormData({
+        ...projectFormData,
+        [name]: value,
+      });
+    }
   };
 
-  const { list: projectList, isLoading: isProjectLoading, error: projectError } = useFetchActiveList(`project?status=true`);
+  const { list: projectList, isLoading: isProjectLoading, error: projectError } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
+  const { list: amentiesList, isLoading: isAmentiesLoading, error: amentiesError } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
+  const { list: facilityList, isLoading: isFacilityLoading, error: facilityError } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
+  const { list: microcityList, isLoading: ismicrocityLoading, error: microcitError } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
 
-  const handleProjectInfo = (e) => {
+  // submit project form
+  const handleProjectInfo = async (e) => {
     e.preventDefault();
-    console.log(selectedProject, projectFormData, slug);
+    const formData = new FormData();
+
+    formData.append("projectName", selectedProject.value);
+    formData.append("builder", selectedProject.builderName);
+    formData.append("address", projectFormData.address);
+    formData.append("propertyTitle", projectFormData.propertyTitle);
+    formData.append("propertySlug", slug);
+    formData.append("priceType", projectFormData.priceType);
+    formData.append("price", projectFormData.price);
+    formData.append("priceUnit", projectFormData.priceUnit);
+    formData.append("minPrice", projectFormData.minPrice);
+    formData.append("minPriceUnit", projectFormData.minUnit);
+    formData.append("maxPrice", projectFormData.maxPrice);
+    formData.append("maxPriceUnit", projectFormData.maxUnit);
+    formData.append("minSize", projectFormData.minSize);
+    formData.append("minSizeUnit", projectFormData.minSizeUnit);
+    formData.append("maxSize", projectFormData.maxSize);
+    formData.append("maxSizeUnit", projectFormData.maxSizeUnit);
+
+    selectedSubCategory?.forEach((v, i) => {
+      formData.append(`propertySubCategory[${i}]`, projectFormData[v]?.value);
+    });
+    selectedTopology?.forEach((v, i) => {
+      formData.append(`topology[${i}]`, projectFormData[v]?.value);
+    });
+    selectedMicrocity?.forEach((v, i) => {
+      formData.append(`microsite[${i}]`, projectFormData[v]?.value);
+    });
+    selectedAmenties?.forEach((v, i) => {
+      formData.append(`amenties[${i}]`, projectFormData[v]?.value);
+    });
+    selectedFacility?.forEach((v, i) => {
+      formData.append(`facility[${i}]`, projectFormData[v]?.value);
+    });
+    selectedRelatedProperties?.forEach((v, i) => {
+      formData.append(`relatedProperties[${i}]`, projectFormData[v]?.value);
+    });
+
+    formData.append("completionOn", projectFormData.completionOn);
+    formData.append("possionNumber", projectFormData.possionOn);
+    formData.append("possionWMY", projectFormData.possionDropdown);
+
+    formData.append("possionWMY", projectFormData.possionDropdown);
+    formData.append("possionWMY", projectFormData.possionDropdown);
+    formData.append("order", projectFormData.order);
+
+    formData.append("featuredImage", projectFormData.featuredImage);
+    formData.append("featuredImageTitle", projectFormData.featuredImageTitle);
+    formData.append("featuredImageAlt", projectFormData.featuredImageAlt);
+
+    formData.append("featuredImage", projectFormData.featuredImage);
+    formData.append("featuredImageTitle", projectFormData.featuredImageTitle);
+    formData.append("featuredImageAlt", projectFormData.featuredImageAlt);
+
+    formData.append("longDescription", editorData);
+
+    formData.append("featured", isFeatured);
+    formData.append("index", isIndex);
+    formData.append("status", isActive);
+
+    const response = await addProperty(formData);
   };
+
+  // fetch sub category on the basis of select project name
+  const fetchSubCategory = async () => {
+    try {
+      const response = await fetchPropertySubCategory(selectedProject?.completeData?.propertyCategory?._id);
+      const data = response?.data?.map((v, i) => ({
+        label: v?.subCategoryName,
+        value: v?._id,
+      }));
+      setHasSubCategory(data);
+    } catch (error) {
+      console.log(error?.message);
+    }
+  };
+
+  // fetch topology on the basis of selected project name
+  const fetchTopology = async () => {
+    try {
+      const response = await fetchPropertyTopology(selectedProject?.completeData?.propertyCategory?._id);
+      const data = response?.data?.map((v, i) => ({
+        label: v?.name,
+        value: v?._id,
+      }));
+      setHasTopology(data);
+    } catch (e) {
+      console.log(e?.message);
+    }
+  };
+
+  // fetch microcity on the basis of selected project name
+  const fetchMicrocity = async () => {
+    try {
+      const response = await fetchPropertyMicrocity(selectedProject?.completeData?.city?._id);
+      const data = response?.data?.map((v, i) => ({
+        label: v?.name,
+        value: v?._id,
+      }));
+      setHasMicrocity(data);
+    } catch (e) {
+      console.log(e?.message);
+    }
+  };
+
+  useEffect(() => {
+    if (projectList.length > 0) {
+      setSelectedSubCategory(null); // clear  sub category selected option when we change the project name
+      setSelectedTopology(null); // clear topology selected option when we change the project name
+      setSelectedMicrocity(null); // clear microcity selected option when we change the project name
+
+      fetchSubCategory();
+      fetchTopology();
+      fetchMicrocity();
+    }
+  }, [selectedProject]); // Run whenever we select project
 
   return (
     <>
@@ -60,23 +214,21 @@ export default function page() {
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
             <div className="sm:col-span-6">
               <div>
-                {isProjectLoading && <p>Loading...</p>}
-                {projectList?.length <= 0 && (
+                {isProjectLoading ? (
+                  <p>Loading...</p>
+                ) : projectList && projectList.length === 0 ? (
                   <div className="space-y-2">
                     <label className="font-medium text-gray-700">Project Name</label>
                     <p className="mt-1 text-sm text-gray-500">Create Active Project</p>
                   </div>
-                )}
-                {projectList?.length > 0 && (
-                  <>
-                    <SelectDropdown
-                      label="Project Name"
-                      value={selectedProject}
-                      options={projectList}
-                      onChange={setSelectedProject}
-                      placeholder="Choose an country"
-                    />
-                  </>
+                ) : (
+                  <SelectDropdown
+                    label="Project Name"
+                    value={selectedProject}
+                    options={projectList}
+                    onChange={setSelectedProject}
+                    placeholder="Choose a country"
+                  />
                 )}
               </div>
             </div>
@@ -136,23 +288,106 @@ export default function page() {
               </>
             )}
 
+            <div className="sm:col-span-3">
+              <Input label="Min Size" placeholder="Enter your min size" name="minSize" value={projectFormData.minSize} onChange={handleChange} />
+            </div>
+            <div className="sm:col-span-3">
+              <Dropdown label="Min Size Unit" name="minSizeUnit" items={minSizeUnit} handleChange={handleChange} value={projectFormData.minSizeUnit} />
+            </div>
+            <div className="sm:col-span-3">
+              <Input label="Max Size" placeholder="Enter your maxSize" name="maxSize" value={projectFormData.maxSize} onChange={handleChange} />
+            </div>
+            <div className="sm:col-span-3">
+              <Dropdown label="Max Size Unit" name="maxSizeUnit" items={maxSizeUnit} handleChange={handleChange} value={projectFormData.maxSizeUnit} />
+            </div>
+
             <div className="sm:col-span-4">
-              <Input label="Topology" type="text" placeholder="Enter your slug name" name="slug" />
+              <SelectDropdown
+                label="Property Sub Category"
+                value={selectedSubCategory}
+                options={hasSubCategory}
+                onChange={setSelectedSubCategory}
+                placeholder="Choose an sub category"
+                isMulti={true}
+              />
+            </div>
+
+            <div className="sm:col-span-4">
+              <SelectDropdown
+                label="Topology"
+                value={selectedTopology}
+                options={hasTopology}
+                onChange={setSelectedTopology}
+                placeholder="Choose an sub topology"
+                isMulti={true}
+              />
             </div>
             <div className="sm:col-span-4">
-              <Input label="Topology" type="text" placeholder="Enter your slug name" name="slug" />
+              <SelectDropdown
+                label="Microsite"
+                value={selectedMicrocity}
+                options={hasMicrocity}
+                onChange={setSelectedMicrocity}
+                placeholder="Choose an sub microcity"
+                isMulti={true}
+              />
             </div>
             <div className="sm:col-span-4">
-              <Input label="Microsite" type="text" placeholder="Enter your slug name" name="slug" />
+              {isAmentiesLoading ? (
+                <p>Loading...</p>
+              ) : amentiesList && amentiesList.length === 0 ? (
+                <div className="space-y-2">
+                  <label className="font-medium text-gray-700">Amenties</label>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Amenties</p>
+                </div>
+              ) : (
+                <SelectDropdown
+                  label="Amenties"
+                  value={selectedAmenties}
+                  options={amentiesList}
+                  onChange={setSelectedAmenties}
+                  placeholder="Choose a Amenties"
+                  isMulti={true}
+                />
+              )}
             </div>
             <div className="sm:col-span-4">
-              <Input label="Amenties" type="text" placeholder="Enter your slug name" name="slug" />
+              {isFacilityLoading ? (
+                <p>Loading...</p>
+              ) : facilityList && facilityList.length === 0 ? (
+                <div className="space-y-2">
+                  <label className="font-medium text-gray-700">Facility</label>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Facility</p>
+                </div>
+              ) : (
+                <SelectDropdown
+                  label="Facility"
+                  value={selectedFacility}
+                  options={facilityList}
+                  onChange={setSelectedFacility}
+                  placeholder="Choose a Amenties"
+                  isMulti={true}
+                />
+              )}
             </div>
             <div className="sm:col-span-4">
-              <Input label="Facility" type="text" placeholder="Enter your property name" name="propertyName" />
-            </div>
-            <div className="sm:col-span-4">
-              <Input label="Related Property Location" type="text" placeholder="Enter your property name" name="propertyName" />
+              {ismicrocityLoading ? (
+                <p>Loading...</p>
+              ) : microcityList && microcityList.length === 0 ? (
+                <div className="space-y-2">
+                  <label className="font-medium text-gray-700">Related Property Location</label>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Microcity</p>
+                </div>
+              ) : (
+                <SelectDropdown
+                  label="Related Property Location"
+                  value={selectedRelatedProperties}
+                  options={microcityList}
+                  onChange={setSelectedRelatedProperties}
+                  placeholder="Choose a realted property location"
+                  isMulti={true}
+                />
+              )}
             </div>
 
             <div className="sm:col-span-4">
@@ -180,13 +415,33 @@ export default function page() {
             </div>
 
             <div className="sm:col-span-4">
-              <Input label="Property Featured Image" type="file" placeholder="Enter your property name" name="propertyName" />
+              <Input
+                label="Property Featured Image"
+                type="file"
+                placeholder="Enter your property featured iamge"
+                name="featuredImage"
+                onChange={(e) => handleChange(e, true)}
+              />
             </div>
             <div className="sm:col-span-4">
-              <Input label="Property Featured Image Title" type="text" placeholder="Enter your property name" name="propertyName" />
+              <Input
+                label="Property Featured Image Title"
+                type="text"
+                placeholder="Enter your featured image title"
+                name="featuredImageTitle"
+                onChange={handleChange}
+                value={projectFormData?.featuredImageTitle}
+              />
             </div>
             <div className="sm:col-span-4">
-              <Input label="Property Featured Image Alt" type="text" placeholder="Enter your property name" name="propertyName" />
+              <Input
+                label="Property Featured Image Alt"
+                type="text"
+                placeholder="Enter your featured image alt"
+                name="featuredImageAlt"
+                onChange={handleChange}
+                value={projectFormData?.featuredImageAlt}
+              />
             </div>
 
             <div className="col-span-full">

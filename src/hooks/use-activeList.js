@@ -14,6 +14,7 @@ export const useFetchActiveList = (url) => {
           label: v?.name || "",
           value: v?._id || "",
           builderName: v?.builder?.name,
+          completeData: v,
         }));
         setList(formattedList);
       } catch (err) {

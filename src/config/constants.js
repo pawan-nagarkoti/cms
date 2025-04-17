@@ -80,3 +80,33 @@ export const propertyOrderBy = [
     value: "4",
   },
 ];
+
+export const maxSizeUnit = [
+  {
+    label: "sqmt",
+    value: "sqmt",
+  },
+  {
+    label: "sqft",
+    value: "sqft",
+  },
+  {
+    label: "sqyd",
+    value: "sqyd",
+  },
+];
+
+export const minSizeUnit = [
+  {
+    label: "sqmt",
+    value: "sqmt",
+  },
+  {
+    label: "sqft",
+    value: "sqft",
+  },
+  {
+    label: "sqyd",
+    value: "sqyd",
+  },
+];

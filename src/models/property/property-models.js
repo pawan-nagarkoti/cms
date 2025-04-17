@@ -1,40 +1,44 @@
 import mongoose from "mongoose";
 import Project from "../project";
 import Topology from "../topology";
+import PropertySubCategory from "../propertySubCategory";
+import Microcities from "../microcities";
+import Amenity from "../amenity";
+import Facility from "../facility";
 
 const propertySchema = new mongoose.Schema(
   {
     projectName: {
       type: mongoose.Schema.Types.ObjectId,
       ref: Project,
-      required: [true, "Project name is required"],
+      // required: [true, "Project name is required"],
     },
     builder: {
       type: String,
-      required: true,
+      // required: true,
     },
     address: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
     },
     propertyTitle: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
     },
     propertySlug: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
     },
     priceType: {
       type: String,
-      required: true,
+      // required: true,
     },
     price: {
       type: String,
-      required: true,
+      // required: true,
     },
     priceUnit: {
       type: String,
@@ -80,7 +84,7 @@ const propertySchema = new mongoose.Schema(
     topology: {
       type: mongoose.Schema.Types.ObjectId,
       ref: Topology,
-      required: true,
+      // required: true,
     },
     microsite: {
       type: mongoose.Schema.Types.ObjectId,
@@ -90,28 +94,37 @@ const propertySchema = new mongoose.Schema(
     amenties: {
       type: mongoose.Schema.Types.ObjectId,
       ref: Amenity,
-      required: true,
+      // required: true,
     },
     facility: {
       type: mongoose.Schema.Types.ObjectId,
       ref: Facility,
-      required: true,
+      // required: true,
+    },
+    relatedProperties: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: Microcities,
+      requried: true,
     },
     completionOn: {
       type: String,
-      required: true,
+      // required: true,
     },
     possionOn: {
       type: String,
-      required: true,
+      // required: true,
     },
     possionDropdown: {
       type: String,
       requried: true,
     },
+    order: {
+      type: String,
+      requried: true,
+    },
     longDescription: {
       type: String,
-      required: true,
+      // required: true,
     },
     relatedPropertyLocation: {
       type: mongoose.Schema.Types.ObjectId,

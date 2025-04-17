@@ -1,6 +1,11 @@
 "use client";
 
-import CustomEditor from "@/components/forms/CustomEditor";
+// import CustomEditor from "@/components/forms/CustomEditor";
+import dynamic from "next/dynamic";
+
+const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
+  ssr: false,
+});
 import SelectDropdown from "@/components/forms/CustomSelect";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";

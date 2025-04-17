@@ -9,9 +9,15 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Loading from "@/app/loading";
-import CustomEditor from "@/components/forms/CustomEditor";
+// import CustomEditor from "@/components/forms/CustomEditor";
 import { useFetchActiveList } from "@/hooks/use-activeList";
 import SelectDropdown from "@/components/forms/CustomSelect";
+
+import dynamic from "next/dynamic";
+
+const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
+  ssr: false,
+});
 
 export default function page() {
   const [isActive, setIsActive] = useState(false);
