@@ -10,7 +10,15 @@ import SelectDropdown from "@/components/forms/CustomSelect";
 import { useFetchActiveList } from "@/hooks/use-activeList";
 import { Button } from "@/components/ui/button";
 import useSlug from "@/hooks/use-slug";
-import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
+import {
+  maxSizeUnit,
+  minSizeUnit,
+  possionNumber,
+  possionWMY,
+  PriceType,
+  PriceUnit,
+  propertyOrderBy,
+} from "@/config/constants";
 // import CustomEditor from "@/components/forms/CustomEditor";
 import {
   addProperty,
@@ -46,12 +54,16 @@ export default function page() {
 
   const [selectedAmenties, setSelectedAmenties] = useState(null);
   const [selectedFacility, setSelectedFacility] = useState(null);
-  const [selectedRelatedProperties, setSelectedRelatedProperties] = useState(null);
+  const [selectedRelatedProperties, setSelectedRelatedProperties] =
+    useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isPropertyImageDataLoding, setIsPropertyImageDataLoding] = useState(false);
+  const [isPropertyImageDataLoding, setIsPropertyImageDataLoding] =
+    useState(false);
 
-  const [propertyImageDataContainer, setPropertyImageDataContainer] = useState([]);
+  const [propertyImageDataContainer, setPropertyImageDataContainer] = useState(
+    []
+  );
 
   const [projectFormData, setProjectFormData] = useState({
     address: "",
@@ -75,6 +87,9 @@ export default function page() {
     featuredImageTitle: "",
     featuredImageAlt: "",
   });
+
+  const [hasImageRowDeleted, setHasImageRowDeleted] = useState(false); // is it deleted property image row ?
+
   const slug = useSlug(projectFormData?.propertyTitle || "");
 
   // Add property image states
@@ -120,10 +135,26 @@ export default function page() {
     }
   };
 
-  const { list: projectList, isLoading: isProjectLoading, error: projectError } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
-  const { list: amentiesList, isLoading: isAmentiesLoading, error: amentiesError } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
-  const { list: facilityList, isLoading: isFacilityLoading, error: facilityError } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
-  const { list: microcityList, isLoading: ismicrocityLoading, error: microcitError } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
+  const {
+    list: projectList,
+    isLoading: isProjectLoading,
+    error: projectError,
+  } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
+  const {
+    list: amentiesList,
+    isLoading: isAmentiesLoading,
+    error: amentiesError,
+  } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
+  const {
+    list: facilityList,
+    isLoading: isFacilityLoading,
+    error: facilityError,
+  } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
+  const {
+    list: microcityList,
+    isLoading: ismicrocityLoading,
+    error: microcitError,
+  } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
 
   // Add property after submit the form
   const handleProjectInfo = async (e) => {
@@ -147,12 +178,30 @@ export default function page() {
     formData.append("maxSize", projectFormData.maxSize);
     formData.append("maxSizeUnit", projectFormData.maxSizeUnit);
 
-    formData.append("propertySubCategory", JSON.stringify(selectedSubCategory?.map((item) => item.value) || []));
-    formData.append("topology", JSON.stringify(selectedTopology?.map((item) => item.value) || []));
-    formData.append("microsite", JSON.stringify(selectedMicrocity?.map((item) => item.value) || []));
-    formData.append("amenties", JSON.stringify(selectedAmenties?.map((item) => item.value) || []));
-    formData.append("facility", JSON.stringify(selectedFacility?.map((item) => item.value) || []));
-    formData.append("relatedProperties", JSON.stringify(selectedRelatedProperties?.map((item) => item.value) || []));
+    formData.append(
+      "propertySubCategory",
+      JSON.stringify(selectedSubCategory?.map((item) => item.value) || [])
+    );
+    formData.append(
+      "topology",
+      JSON.stringify(selectedTopology?.map((item) => item.value) || [])
+    );
+    formData.append(
+      "microsite",
+      JSON.stringify(selectedMicrocity?.map((item) => item.value) || [])
+    );
+    formData.append(
+      "amenties",
+      JSON.stringify(selectedAmenties?.map((item) => item.value) || [])
+    );
+    formData.append(
+      "facility",
+      JSON.stringify(selectedFacility?.map((item) => item.value) || [])
+    );
+    formData.append(
+      "relatedProperties",
+      JSON.stringify(selectedRelatedProperties?.map((item) => item.value) || [])
+    );
 
     // Dates and dropdowns
     formData.append("completionOn", projectFormData.completionOn);
@@ -187,7 +236,9 @@ export default function page() {
   // fetch sub category on the basis of select project name
   const fetchSubCategory = async () => {
     try {
-      const response = await fetchPropertySubCategory(selectedProject?.completeData?.propertyCategory?._id);
+      const response = await fetchPropertySubCategory(
+        selectedProject?.completeData?.propertyCategory?._id
+      );
       const data = response?.data?.map((v, i) => ({
         label: v?.subCategoryName,
         value: v?._id,
@@ -201,7 +252,9 @@ export default function page() {
   // fetch topology on the basis of selected project name
   const fetchTopology = async () => {
     try {
-      const response = await fetchPropertyTopology(selectedProject?.completeData?.propertyCategory?._id);
+      const response = await fetchPropertyTopology(
+        selectedProject?.completeData?.propertyCategory?._id
+      );
       const data = response?.data?.map((v, i) => ({
         label: v?.name,
         value: v?._id,
@@ -215,7 +268,9 @@ export default function page() {
   // fetch microcity on the basis of selected project name
   const fetchMicrocity = async () => {
     try {
-      const response = await fetchPropertyMicrocity(selectedProject?.completeData?.city?._id);
+      const response = await fetchPropertyMicrocity(
+        selectedProject?.completeData?.city?._id
+      );
       const data = response?.data?.map((v, i) => ({
         label: v?.name,
         value: v?._id,
@@ -242,17 +297,29 @@ export default function page() {
   const handleSubmitPropertyImage = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append("propertyImageTable", propertyImageFormData?.propertyImageTable);
-    formData.append("propertyTitleTable", propertyImageFormData?.propertyTitleTable);
-    formData.append("propertyAltTable", propertyImageFormData?.propertyAltTable);
+    formData.append(
+      "propertyImageTable",
+      propertyImageFormData?.propertyImageTable
+    );
+    formData.append(
+      "propertyTitleTable",
+      propertyImageFormData?.propertyTitleTable
+    );
+    formData.append(
+      "propertyAltTable",
+      propertyImageFormData?.propertyAltTable
+    );
     setIsPropertyImageDataLoding(true);
     try {
       const response = await addPropertyImage(formData);
-      setPropertyImageData({
-        propertyImageTable: "",
-        propertyTitleTable: "",
-        propertyAltTable: "",
-      });
+      if (response.success) {
+        fetchAllPropertyImage();
+        setPropertyImageData({
+          propertyImageTable: "",
+          propertyTitleTable: "",
+          propertyAltTable: "",
+        });
+      }
     } catch (e) {
       console.log(e?.message);
     } finally {
@@ -272,7 +339,7 @@ export default function page() {
   };
   useEffect(() => {
     fetchAllPropertyImage();
-  }, []);
+  }, [hasImageRowDeleted]);
 
   return (
     <>
@@ -286,8 +353,12 @@ export default function page() {
                   <p>Loading...</p>
                 ) : projectList && projectList.length === 0 ? (
                   <div className="space-y-2">
-                    <label className="font-medium text-gray-700">Project Name</label>
-                    <p className="mt-1 text-sm text-gray-500">Create Active Project</p>
+                    <label className="font-medium text-gray-700">
+                      Project Name
+                    </label>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Create Active Project
+                    </p>
                   </div>
                 ) : (
                   <SelectDropdown
@@ -311,7 +382,12 @@ export default function page() {
               />
             </div>
             <div className="col-span-full">
-              <Textarea label="Address" name="address" value={projectFormData?.address} onChange={handleChange} />
+              <Textarea
+                label="Address"
+                name="address"
+                value={projectFormData?.address}
+                onChange={handleChange}
+              />
             </div>
             <div className="sm:col-span-6">
               <Input
@@ -323,18 +399,44 @@ export default function page() {
               />
             </div>
             <div className="sm:col-span-6">
-              <Input label="Property Slug *" placeholder="Enter your slug name" name="slug" value={slug} disabled className="cursor-not-allowed" />
+              <Input
+                label="Property Slug *"
+                placeholder="Enter your slug name"
+                name="slug"
+                value={slug}
+                disabled
+                className="cursor-not-allowed"
+              />
             </div>
             <div className="sm:col-span-2">
-              <Dropdown label="Price Type" name="priceType" items={PriceType} handleChange={handleChange} value={projectFormData.priceType} />
+              <Dropdown
+                label="Price Type"
+                name="priceType"
+                items={PriceType}
+                handleChange={handleChange}
+                value={projectFormData.priceType}
+              />
             </div>
-            {(projectFormData?.priceType === "Fixed" || projectFormData?.priceType === "") && (
+            {(projectFormData?.priceType === "Fixed" ||
+              projectFormData?.priceType === "") && (
               <>
                 <div className="col-span-6">
-                  <Input label="Price" placeholder="Enter your price" name="price" value={projectFormData.price} onChange={handleChange} />
+                  <Input
+                    label="Price"
+                    placeholder="Enter your price"
+                    name="price"
+                    value={projectFormData.price}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="sm:col-span-4">
-                  <Dropdown label="Price Unit" name="priceUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.priceUnit} />
+                  <Dropdown
+                    label="Price Unit"
+                    name="priceUnit"
+                    items={PriceUnit}
+                    handleChange={handleChange}
+                    value={projectFormData.priceUnit}
+                  />
                 </div>
               </>
             )}
@@ -342,31 +444,79 @@ export default function page() {
             {projectFormData?.priceType === "Range" && (
               <>
                 <div className="col-span-2">
-                  <Input label="Min Price" placeholder="Enter your price" name="minPrice" value={projectFormData.minPrice} onChange={handleChange} />
+                  <Input
+                    label="Min Price"
+                    placeholder="Enter your price"
+                    name="minPrice"
+                    value={projectFormData.minPrice}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="sm:col-span-3">
-                  <Dropdown label="Min Price Unit" name="minUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.minUnit} />
+                  <Dropdown
+                    label="Min Price Unit"
+                    name="minUnit"
+                    items={PriceUnit}
+                    handleChange={handleChange}
+                    value={projectFormData.minUnit}
+                  />
                 </div>
                 <div className="col-span-3">
-                  <Input label="Max Price" placeholder="Enter your price" name="maxPrice" value={projectFormData.maxPrice} onChange={handleChange} />
+                  <Input
+                    label="Max Price"
+                    placeholder="Enter your price"
+                    name="maxPrice"
+                    value={projectFormData.maxPrice}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="sm:col-span-2">
-                  <Dropdown label="Max Price Unit" name="maxUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.maxUnit} />
+                  <Dropdown
+                    label="Max Price Unit"
+                    name="maxUnit"
+                    items={PriceUnit}
+                    handleChange={handleChange}
+                    value={projectFormData.maxUnit}
+                  />
                 </div>
               </>
             )}
 
             <div className="sm:col-span-3">
-              <Input label="Min Size" placeholder="Enter your min size" name="minSize" value={projectFormData.minSize} onChange={handleChange} />
+              <Input
+                label="Min Size"
+                placeholder="Enter your min size"
+                name="minSize"
+                value={projectFormData.minSize}
+                onChange={handleChange}
+              />
             </div>
             <div className="sm:col-span-3">
-              <Dropdown label="Min Size Unit" name="minSizeUnit" items={minSizeUnit} handleChange={handleChange} value={projectFormData.minSizeUnit} />
+              <Dropdown
+                label="Min Size Unit"
+                name="minSizeUnit"
+                items={minSizeUnit}
+                handleChange={handleChange}
+                value={projectFormData.minSizeUnit}
+              />
             </div>
             <div className="sm:col-span-3">
-              <Input label="Max Size" placeholder="Enter your maxSize" name="maxSize" value={projectFormData.maxSize} onChange={handleChange} />
+              <Input
+                label="Max Size"
+                placeholder="Enter your maxSize"
+                name="maxSize"
+                value={projectFormData.maxSize}
+                onChange={handleChange}
+              />
             </div>
             <div className="sm:col-span-3">
-              <Dropdown label="Max Size Unit" name="maxSizeUnit" items={maxSizeUnit} handleChange={handleChange} value={projectFormData.maxSizeUnit} />
+              <Dropdown
+                label="Max Size Unit"
+                name="maxSizeUnit"
+                items={maxSizeUnit}
+                handleChange={handleChange}
+                value={projectFormData.maxSizeUnit}
+              />
             </div>
 
             <div className="sm:col-span-4">
@@ -406,7 +556,9 @@ export default function page() {
               ) : amentiesList && amentiesList.length === 0 ? (
                 <div className="space-y-2">
                   <label className="font-medium text-gray-700">Amenties</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Amenties</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Create Active Amenties
+                  </p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -425,7 +577,9 @@ export default function page() {
               ) : facilityList && facilityList.length === 0 ? (
                 <div className="space-y-2">
                   <label className="font-medium text-gray-700">Facility</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Facility</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Create Active Facility
+                  </p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -443,8 +597,12 @@ export default function page() {
                 <p>Loading...</p>
               ) : microcityList && microcityList.length === 0 ? (
                 <div className="space-y-2">
-                  <label className="font-medium text-gray-700">Related Property Location</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Microcity</p>
+                  <label className="font-medium text-gray-700">
+                    Related Property Location
+                  </label>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Create Active Microcity
+                  </p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -471,15 +629,32 @@ export default function page() {
             <div className="sm:col-span-4">
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                 <div className="col-span-6">
-                  <Dropdown label="Possion On" name="possionNumber" items={possionNumber} handleChange={handleChange} value={projectFormData.possionNumber} />
+                  <Dropdown
+                    label="Possion On"
+                    name="possionNumber"
+                    items={possionNumber}
+                    handleChange={handleChange}
+                    value={projectFormData.possionNumber}
+                  />
                 </div>
                 <div className="col-span-6">
-                  <Dropdown name="possionWMY" items={possionWMY} handleChange={handleChange} value={projectFormData.possionWMY} />
+                  <Dropdown
+                    name="possionWMY"
+                    items={possionWMY}
+                    handleChange={handleChange}
+                    value={projectFormData.possionWMY}
+                  />
                 </div>
               </div>
             </div>
             <div className="sm:col-span-4">
-              <Dropdown label="Property Order" name="order" items={propertyOrderBy} handleChange={handleChange} value={projectFormData.order} />
+              <Dropdown
+                label="Property Order"
+                name="order"
+                items={propertyOrderBy}
+                handleChange={handleChange}
+                value={projectFormData.order}
+              />
             </div>
 
             <div className="sm:col-span-4">
@@ -513,14 +688,30 @@ export default function page() {
             </div>
 
             <div className="col-span-full">
-              <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
+              <CustomEditor
+                onChange={setEditorData}
+                label="Long Description"
+                data={editorData}
+              />
             </div>
           </div>
 
           <div className="grid gap-3 mt-6">
-            <CustomToggle label="Is Featured" onCheckedChange={(checked) => setIsFeatured(checked)} checked={isFeatured} />
-            <CustomToggle label="Index" onCheckedChange={(checked) => setIndex(checked)} checked={isIndex} />
-            <CustomToggle label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
+            <CustomToggle
+              label="Is Featured"
+              onCheckedChange={(checked) => setIsFeatured(checked)}
+              checked={isFeatured}
+            />
+            <CustomToggle
+              label="Index"
+              onCheckedChange={(checked) => setIndex(checked)}
+              checked={isIndex}
+            />
+            <CustomToggle
+              label="status (Active / Inactive)"
+              onCheckedChange={(checked) => setIsActive(checked)}
+              checked={isActive}
+            />
           </div>
 
           <div className="text-center my-10">
@@ -566,7 +757,11 @@ export default function page() {
               />
             </div>
             <div className="col-span-3 mt-[32px]">
-              <Button type="submit" className="w-full" disabled={isPropertyImageDataLoding}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isPropertyImageDataLoding}
+              >
                 {isPropertyImageDataLoding ? "Loding..." : "save"}
               </Button>
             </div>
@@ -574,7 +769,10 @@ export default function page() {
         </form>
         {/* Table for add property image form */}
         <div className="mt-10">
-          <PropertyImageTable propertyImageDataContainer={propertyImageDataContainer} />
+          <PropertyImageTable
+            propertyImageDataContainer={propertyImageDataContainer}
+            setHasImageRowDeleted={setHasImageRowDeleted}
+          />
         </div>
       </CustomAccordion>
 

@@ -8,10 +8,12 @@ import { apiCall } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function PropertyImageTable({ propertyImageDataContainer }) {
+export default function PropertyImageTable({
+  propertyImageDataContainer,
+  setHasImageRowDeleted,
+}) {
   console.log(propertyImageDataContainer);
   const router = useRouter();
-  const [builderTableData, setBuilderTableData] = useState([]);
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [isSingleRowData, setIsSingleRowData] = useState("");
 
@@ -25,7 +27,11 @@ export default function PropertyImageTable({ propertyImageDataContainer }) {
       header: "Image",
       accessorKey: "image",
       cell: (cellInfo) => (
-        <img src={cellInfo?.row?.original?.image} alt="Country" className="w-16 h-16 object-cover rounded-md border border-gray-300 shadow-sm mx-auto" />
+        <img
+          src={cellInfo?.row?.original?.image}
+          alt="Country"
+          className="w-16 h-16 object-cover rounded-md border border-gray-300 shadow-sm mx-auto"
+        />
       ),
     },
     {
@@ -75,6 +81,7 @@ export default function PropertyImageTable({ propertyImageDataContainer }) {
     // const response = await apiCall(`/builder/${isSingleRowData?._id}`, "DELETE");
     const response = await deletePropertyImage(isSingleRowData?._id);
     if (!response.error) {
+      setHasImageRowDeleted((prev) => !prev);
       setIsOpenDeleteModal(false);
     }
   };
@@ -83,12 +90,19 @@ export default function PropertyImageTable({ propertyImageDataContainer }) {
     <>
       {/* <div className="p-4 bg-white rounded-lg border border-gray-200"> */}
       <div className="mt-5">
-        <CustomTable columns={columns} data={propertyImageDataContainer?.data} />
+        <CustomTable
+          columns={columns}
+          data={propertyImageDataContainer?.data}
+        />
       </div>
       {/* </div> */}
 
       {isOpenDeleteModal && (
-        <DeleteModal isOpenDeleteModal={isOpenDeleteModal} setIsOpenDeleteModal={setIsOpenDeleteModal} handleDeletedRow={handleDeletedRow} />
+        <DeleteModal
+          isOpenDeleteModal={isOpenDeleteModal}
+          setIsOpenDeleteModal={setIsOpenDeleteModal}
+          handleDeletedRow={handleDeletedRow}
+        />
       )}
     </>
   );
