@@ -42,70 +42,82 @@ const propertySchema = new mongoose.Schema(
     },
     priceUnit: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     minPrice: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     minPriceUnit: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     maxPrice: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     maxPriceUnit: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     minSize: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     minSizeUnit: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     maxSize: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     maxSizeUnit: {
       type: String,
-      requried: true,
+      // requried: true,
     },
-    propertySubCategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: PropertySubCategory,
-      requried: true,
-    },
-    topology: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: Topology,
-      // required: true,
-    },
-    microsite: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: Microcities,
-      requried: true,
-    },
-    amenties: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: Amenity,
-      // required: true,
-    },
-    facility: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: Facility,
-      // required: true,
-    },
-    relatedProperties: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: Microcities,
-      requried: true,
-    },
+    propertySubCategory: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PropertySubCategory",
+        // requried: true,
+      },
+    ],
+    topology: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Topology",
+        // required: true,
+      },
+    ],
+    microsite: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Microcities",
+        // requried: true,
+      },
+    ],
+    amenties: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Amenity",
+        // required: true,
+      },
+    ],
+    facility: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Facility",
+        // required: true,
+      },
+    ],
+    relatedProperties: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Microcities",
+        // requried: true,
+      },
+    ],
     completionOn: {
       type: String,
       // required: true,
@@ -116,11 +128,11 @@ const propertySchema = new mongoose.Schema(
     },
     possionDropdown: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     order: {
       type: String,
-      requried: true,
+      // requried: true,
     },
     longDescription: {
       type: String,

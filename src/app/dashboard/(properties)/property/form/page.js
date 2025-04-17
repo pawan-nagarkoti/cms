@@ -12,7 +12,15 @@ import { Button } from "@/components/ui/button";
 import useSlug from "@/hooks/use-slug";
 import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
 // import CustomEditor from "@/components/forms/CustomEditor";
-import { addProperty, fetchPropertyMicrocity, fetchPropertySubCategory, fetchPropertyTopology } from "@/actions/project-actions";
+import {
+  addProperty,
+  addPropertyImage,
+  fetchPropertyImage,
+  fetchPropertyMicrocity,
+  fetchPropertySubCategory,
+  fetchPropertyTopology,
+} from "@/actions/project-actions";
+import PropertyImageTable from "@/components/property-table/Property-Image-Table";
 
 import dynamic from "next/dynamic";
 
@@ -40,6 +48,11 @@ export default function page() {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [selectedRelatedProperties, setSelectedRelatedProperties] = useState(null);
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPropertyImageDataLoding, setIsPropertyImageDataLoding] = useState(false);
+
+  const [propertyImageDataContainer, setPropertyImageDataContainer] = useState([]);
+
   const [projectFormData, setProjectFormData] = useState({
     address: "",
     propertyTitle: "",
@@ -64,6 +77,14 @@ export default function page() {
   });
   const slug = useSlug(projectFormData?.propertyTitle || "");
 
+  // Add property image states
+  const [propertyImageFormData, setPropertyImageData] = useState({
+    propertyImageTable: "",
+    propertyTitleTable: "",
+    propertyAltTable: "",
+  });
+
+  // Propery all fields onChange common function
   const handleChange = (e, file) => {
     if (file) {
       const name = e.target.name;
@@ -81,12 +102,30 @@ export default function page() {
     }
   };
 
+  // Property image all fields onChange common function
+  const handlePropertyImageChange = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setPropertyImageData({
+        ...propertyImageFormData,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setPropertyImageData({
+        ...propertyImageFormData,
+        [name]: value,
+      });
+    }
+  };
+
   const { list: projectList, isLoading: isProjectLoading, error: projectError } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
   const { list: amentiesList, isLoading: isAmentiesLoading, error: amentiesError } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
   const { list: facilityList, isLoading: isFacilityLoading, error: facilityError } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
   const { list: microcityList, isLoading: ismicrocityLoading, error: microcitError } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
 
-  // submit project form
+  // Add property after submit the form
   const handleProjectInfo = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -108,48 +147,41 @@ export default function page() {
     formData.append("maxSize", projectFormData.maxSize);
     formData.append("maxSizeUnit", projectFormData.maxSizeUnit);
 
-    selectedSubCategory?.forEach((v, i) => {
-      formData.append(`propertySubCategory[${i}]`, projectFormData[v]?.value);
-    });
-    selectedTopology?.forEach((v, i) => {
-      formData.append(`topology[${i}]`, projectFormData[v]?.value);
-    });
-    selectedMicrocity?.forEach((v, i) => {
-      formData.append(`microsite[${i}]`, projectFormData[v]?.value);
-    });
-    selectedAmenties?.forEach((v, i) => {
-      formData.append(`amenties[${i}]`, projectFormData[v]?.value);
-    });
-    selectedFacility?.forEach((v, i) => {
-      formData.append(`facility[${i}]`, projectFormData[v]?.value);
-    });
-    selectedRelatedProperties?.forEach((v, i) => {
-      formData.append(`relatedProperties[${i}]`, projectFormData[v]?.value);
-    });
+    formData.append("propertySubCategory", JSON.stringify(selectedSubCategory?.map((item) => item.value) || []));
+    formData.append("topology", JSON.stringify(selectedTopology?.map((item) => item.value) || []));
+    formData.append("microsite", JSON.stringify(selectedMicrocity?.map((item) => item.value) || []));
+    formData.append("amenties", JSON.stringify(selectedAmenties?.map((item) => item.value) || []));
+    formData.append("facility", JSON.stringify(selectedFacility?.map((item) => item.value) || []));
+    formData.append("relatedProperties", JSON.stringify(selectedRelatedProperties?.map((item) => item.value) || []));
 
+    // Dates and dropdowns
     formData.append("completionOn", projectFormData.completionOn);
-    formData.append("possionNumber", projectFormData.possionOn);
-    formData.append("possionWMY", projectFormData.possionDropdown);
-
-    formData.append("possionWMY", projectFormData.possionDropdown);
-    formData.append("possionWMY", projectFormData.possionDropdown);
+    formData.append("possionNumber", projectFormData.possionNumber);
+    formData.append("possionWMY", projectFormData.possionWMY);
     formData.append("order", projectFormData.order);
 
+    // Images
     formData.append("featuredImage", projectFormData.featuredImage);
     formData.append("featuredImageTitle", projectFormData.featuredImageTitle);
     formData.append("featuredImageAlt", projectFormData.featuredImageAlt);
 
-    formData.append("featuredImage", projectFormData.featuredImage);
-    formData.append("featuredImageTitle", projectFormData.featuredImageTitle);
-    formData.append("featuredImageAlt", projectFormData.featuredImageAlt);
-
+    // Description
     formData.append("longDescription", editorData);
 
-    formData.append("featured", isFeatured);
-    formData.append("index", isIndex);
-    formData.append("status", isActive);
+    // Boolean values as strings
+    formData.append("featured", JSON.stringify(isFeatured));
+    formData.append("index", JSON.stringify(isIndex));
+    formData.append("status", JSON.stringify(isActive));
 
-    const response = await addProperty(formData);
+    setIsLoading(true);
+    try {
+      const response = await addProperty(formData); // call server action for create property
+      console.log(response);
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // fetch sub category on the basis of select project name
@@ -205,6 +237,42 @@ export default function page() {
       fetchMicrocity();
     }
   }, [selectedProject]); // Run whenever we select project
+
+  // Add property image after submit the property image form
+  const handleSubmitPropertyImage = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("propertyImageTable", propertyImageFormData?.propertyImageTable);
+    formData.append("propertyTitleTable", propertyImageFormData?.propertyTitleTable);
+    formData.append("propertyAltTable", propertyImageFormData?.propertyAltTable);
+    setIsPropertyImageDataLoding(true);
+    try {
+      const response = await addPropertyImage(formData);
+      setPropertyImageData({
+        propertyImageTable: "",
+        propertyTitleTable: "",
+        propertyAltTable: "",
+      });
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      setIsPropertyImageDataLoding(false);
+    }
+  };
+  // fetch all property image
+  const fetchAllPropertyImage = async () => {
+    try {
+      const response = await fetchPropertyImage();
+      if (response?.success) {
+        setPropertyImageDataContainer(response);
+      }
+    } catch (e) {
+      console.log(e?.message);
+    }
+  };
+  useEffect(() => {
+    fetchAllPropertyImage();
+  }, []);
 
   return (
     <>
@@ -456,14 +524,58 @@ export default function page() {
           </div>
 
           <div className="text-center my-10">
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Loding..." : "Submit"}
+            </Button>
           </div>
         </form>
       </CustomAccordion>
 
       {/* Property Image */}
       <CustomAccordion heading="Property Image">
-        <p>lorem 20222</p>
+        {/* Add Property image form */}
+        <form onSubmit={handleSubmitPropertyImage}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="col-span-3">
+              <Input
+                label="Property Image"
+                type="file"
+                placeholder="Enter your property image"
+                name="propertyImageTable"
+                onChange={(e) => handlePropertyImageChange(e, true)}
+              />
+            </div>
+            <div className="col-span-3">
+              <Input
+                label="Title"
+                type="text"
+                placeholder="Enter your title"
+                name="propertyTitleTable"
+                onChange={(e) => handlePropertyImageChange(e)}
+                value={propertyImageFormData?.propertyTitleTable}
+              />
+            </div>
+            <div className="col-span-3">
+              <Input
+                label="Alt"
+                type="text"
+                placeholder="Enter your alt"
+                name="propertyAltTable"
+                onChange={handlePropertyImageChange}
+                value={propertyImageFormData?.propertyAltTable}
+              />
+            </div>
+            <div className="col-span-3 mt-[32px]">
+              <Button type="submit" className="w-full" disabled={isPropertyImageDataLoding}>
+                {isPropertyImageDataLoding ? "Loding..." : "save"}
+              </Button>
+            </div>
+          </div>
+        </form>
+        {/* Table for add property image form */}
+        <div className="mt-10">
+          <PropertyImageTable propertyImageDataContainer={propertyImageDataContainer} />
+        </div>
       </CustomAccordion>
 
       {/* Property Gallery Image */}
