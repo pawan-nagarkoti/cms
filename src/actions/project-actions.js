@@ -3,6 +3,7 @@
 import { convertBase64 } from "@/lib/cloudinary";
 import connectToDB from "@/lib/db";
 import Microcities from "@/models/microcities";
+import Gallery from "@/models/property/gallery-models";
 // import Facility from "@/models/facility";
 // import Faq from "@/models/property/faq-models";
 // import Floor from "@/models/property/floorPlan-models";
@@ -185,7 +186,15 @@ export async function addPropertyImage(formData) {
       image,
       title: formData.get("propertyTitleTable"),
       alt: formData.get("propertyAltTable"),
+      projectId: formData.get("porjectNameID"),
     };
+
+    if (!data?.projectId)
+      return {
+        success: false,
+        message: "Project Id is missing",
+      };
+
     const response = await Image.create(data);
     if (response) {
       return {
@@ -232,6 +241,22 @@ export async function fetchPropertyImage() {
   }
 }
 // update property image
+export async function updatePropertyImage(id, formData) {
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  const image = await convertImagesIntoUrl(getImage?.propertyImageTable, "propertyImageTable", formData); // convert image url
+
+  const data = {
+    image,
+    title: formData.get("propertyTitleTable"),
+    alt: formData.get("propertyAltTable"),
+    projectId: formData.get("porjectNameID"),
+  };
+  const response = await Image.findOneAndUpdate({ _id: id }, data, { new: true });
+  return {
+    success: true,
+    data: response.toObject(),
+  };
+}
 // Delete property image
 export async function deletePropertyImage(id) {
   await connectToDB();
@@ -257,4 +282,77 @@ export async function deletePropertyImage(id) {
     };
   }
 }
-// edit property image
+// fetch single property image
+export async function fetchSinglePropertyImage(id) {
+  await connectToDB();
+  const response = await Image.findById(id);
+  return JSON.parse(JSON.stringify(response));
+}
+// Add gallery images
+export async function addGallery(formData) {
+  await connectToDB();
+
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  const image = await convertImagesIntoUrl(getImage?.galleryImageTable, "galleryImageTable", formData); // convert image url
+
+  const data = {
+    image,
+    title: formData.get("galleryTitleTable"),
+    alt: formData.get("galleryAltTable"),
+    projectId: formData.get("porjectNameID"),
+  };
+  const response = await Gallery.create(data);
+  return response.toObject();
+}
+// fetch all property image
+export async function fetchGallery() {
+  await connectToDB();
+  try {
+    const response = await Gallery.find({});
+    return response;
+  } catch (e) {
+    console.log(e?.message);
+    return {
+      success: false,
+      message: e?.message,
+    };
+  }
+}
+// Delete gallery image
+export async function deleteGallery(id) {
+  console.log("ddddd", id);
+  await connectToDB();
+  try {
+    const response = await Gallery.findByIdAndDelete(id);
+    return response.toObject();
+  } catch (error) {
+    console.log(error?.message);
+    return {
+      success: false,
+      message: error?.message,
+    };
+  }
+}
+// fetch single gallery image
+export async function fetchSingleGallery(id) {
+  await connectToDB();
+  const response = await Gallery.findById(id);
+  return JSON.parse(JSON.stringify(response));
+}
+// update gallery
+export async function updateGallery(id, formData) {
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  const image = await convertImagesIntoUrl(getImage?.galleryImageTable, "galleryImageTable", formData); // convert image url
+
+  const data = {
+    image,
+    title: formData.get("galleryTitleTable"),
+    alt: formData.get("galleryAltTable"),
+    projectId: formData.get("porjectNameID"),
+  };
+  const response = await Gallery.findOneAndUpdate({ _id: id }, data, { new: true });
+  return {
+    success: true,
+    data: response.toObject(),
+  };
+}

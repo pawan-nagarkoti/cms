@@ -11,6 +11,10 @@ const ImageSchema = new mongoose.Schema(
     alt: {
       type: String,
     },
+    projectId: {
+      type: String,
+      requuired: true,
+    },
   },
   { timestamps: true }
 );

@@ -1,13 +1,14 @@
 "use client";
 
-import { deletePropertyImage } from "@/actions/project-actions";
+import { deleteGallery } from "@/actions/project-actions";
 import CustomTable from "@/components/custom-table";
 import DeleteModal from "@/components/modal/delete-modal";
 import { useState } from "react";
 
-export default function PropertyImageTable({ propertyImageDataContainer, setHasImageRowDeleted, setIsEditPropertyImageId }) {
+export default function PropertyGalleryTable({ hasGalleryData = [], setHasGalleryRowDeleted, setIsEditGalleryId }) {
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [isSingleRowData, setIsSingleRowData] = useState("");
+  console.log("s", hasGalleryData);
 
   const columns = [
     {
@@ -38,7 +39,7 @@ export default function PropertyImageTable({ propertyImageDataContainer, setHasI
           <button
             className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300"
             onClick={() => {
-              setIsEditPropertyImageId(cellInfo?.row?.original?._id);
+              setIsEditGalleryId(cellInfo?.row?.original?._id);
             }}
           >
             Edit
@@ -61,9 +62,10 @@ export default function PropertyImageTable({ propertyImageDataContainer, setHasI
 
   // deleted row
   const handleDeletedRow = async () => {
-    const response = await deletePropertyImage(isSingleRowData?._id);
-    if (!response.error) {
-      setHasImageRowDeleted((prev) => !prev);
+    const response = await deleteGallery(isSingleRowData?._id);
+    console.log(response);
+    if (response) {
+      setHasGalleryRowDeleted((prev) => !prev);
       setIsOpenDeleteModal(false);
     }
   };
@@ -71,7 +73,7 @@ export default function PropertyImageTable({ propertyImageDataContainer, setHasI
   return (
     <>
       <div className="mt-5">
-        <CustomTable columns={columns} data={propertyImageDataContainer?.data} />
+        <CustomTable columns={columns} data={hasGalleryData} />
       </div>
       {isOpenDeleteModal && (
         <DeleteModal isOpenDeleteModal={isOpenDeleteModal} setIsOpenDeleteModal={setIsOpenDeleteModal} handleDeletedRow={handleDeletedRow} />

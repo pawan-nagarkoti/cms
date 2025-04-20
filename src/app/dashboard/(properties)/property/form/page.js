@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CustomAccordion } from "@/components/custom-accordion";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
@@ -10,33 +10,37 @@ import SelectDropdown from "@/components/forms/CustomSelect";
 import { useFetchActiveList } from "@/hooks/use-activeList";
 import { Button } from "@/components/ui/button";
 import useSlug from "@/hooks/use-slug";
-import {
-  maxSizeUnit,
-  minSizeUnit,
-  possionNumber,
-  possionWMY,
-  PriceType,
-  PriceUnit,
-  propertyOrderBy,
-} from "@/config/constants";
+import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
 // import CustomEditor from "@/components/forms/CustomEditor";
 import {
+  addGallery,
   addProperty,
   addPropertyImage,
+  fetchGallery,
   fetchPropertyImage,
   fetchPropertyMicrocity,
   fetchPropertySubCategory,
   fetchPropertyTopology,
+  fetchSingleGallery,
+  fetchSinglePropertyImage,
+  updateGallery,
+  updatePropertyImage,
 } from "@/actions/project-actions";
 import PropertyImageTable from "@/components/property-table/Property-Image-Table";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import PropertyGalleryTable from "@/components/property-table/Property-gallery-table";
 
 const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
   ssr: false,
 });
 
 export default function page() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectID = searchParams.get("projectId" || "");
   const [isActive, setIsActive] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isIndex, setIndex] = useState(false);
@@ -54,16 +58,12 @@ export default function page() {
 
   const [selectedAmenties, setSelectedAmenties] = useState(null);
   const [selectedFacility, setSelectedFacility] = useState(null);
-  const [selectedRelatedProperties, setSelectedRelatedProperties] =
-    useState(null);
+  const [selectedRelatedProperties, setSelectedRelatedProperties] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isPropertyImageDataLoding, setIsPropertyImageDataLoding] =
-    useState(false);
+  const [isPropertyImageDataLoding, setIsPropertyImageDataLoding] = useState(false);
 
-  const [propertyImageDataContainer, setPropertyImageDataContainer] = useState(
-    []
-  );
+  const [propertyImageDataContainer, setPropertyImageDataContainer] = useState([]);
 
   const [projectFormData, setProjectFormData] = useState({
     address: "",
@@ -87,16 +87,29 @@ export default function page() {
     featuredImageTitle: "",
     featuredImageAlt: "",
   });
+  const slug = useSlug(projectFormData?.propertyTitle || "");
 
   const [hasImageRowDeleted, setHasImageRowDeleted] = useState(false); // is it deleted property image row ?
+  const [isEditPropertyImageId, setIsEditPropertyImageId] = useState(null); // get project image id when we click on edit button on the table
+  const propertyImageRef = useRef(null);
 
-  const slug = useSlug(projectFormData?.propertyTitle || "");
+  const [hasGalleryData, setHasGalleryData] = useState([]);
+  const [hasGalleryRowDeleted, setHasGalleryRowDeleted] = useState(false);
+  const [isEditGalleryId, setIsEditGalleryId] = useState(null); // get project image id when we click on edit button on the table
+  const galleryRef = useRef(null);
 
   // Add property image states
   const [propertyImageFormData, setPropertyImageData] = useState({
     propertyImageTable: "",
     propertyTitleTable: "",
     propertyAltTable: "",
+  });
+
+  // Add gallery images states
+  const [galleryFormData, setGalleryFormData] = useState({
+    galleryImageTable: "",
+    galleryTitleTable: "",
+    galleryAltTable: "",
   });
 
   // Propery all fields onChange common function
@@ -135,26 +148,28 @@ export default function page() {
     }
   };
 
-  const {
-    list: projectList,
-    isLoading: isProjectLoading,
-    error: projectError,
-  } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
-  const {
-    list: amentiesList,
-    isLoading: isAmentiesLoading,
-    error: amentiesError,
-  } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
-  const {
-    list: facilityList,
-    isLoading: isFacilityLoading,
-    error: facilityError,
-  } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
-  const {
-    list: microcityList,
-    isLoading: ismicrocityLoading,
-    error: microcitError,
-  } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
+  // Property gallery all fields onchange common function
+  const handleGalleryChange = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setGalleryFormData({
+        ...galleryFormData,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setGalleryFormData({
+        ...galleryFormData,
+        [name]: value,
+      });
+    }
+  };
+
+  const { list: projectList, isLoading: isProjectLoading, error: projectError } = useFetchActiveList(`project?status=true`); // fetch projcet whose status is true
+  const { list: amentiesList, isLoading: isAmentiesLoading, error: amentiesError } = useFetchActiveList(`amenity?status=true`); // fetch amenties whose status is true
+  const { list: facilityList, isLoading: isFacilityLoading, error: facilityError } = useFetchActiveList(`facility?status=true`); // fetch facility whose status is true
+  const { list: microcityList, isLoading: ismicrocityLoading, error: microcitError } = useFetchActiveList(`microcities?status=true`); // fetch microcity whose status is true
 
   // Add property after submit the form
   const handleProjectInfo = async (e) => {
@@ -178,30 +193,12 @@ export default function page() {
     formData.append("maxSize", projectFormData.maxSize);
     formData.append("maxSizeUnit", projectFormData.maxSizeUnit);
 
-    formData.append(
-      "propertySubCategory",
-      JSON.stringify(selectedSubCategory?.map((item) => item.value) || [])
-    );
-    formData.append(
-      "topology",
-      JSON.stringify(selectedTopology?.map((item) => item.value) || [])
-    );
-    formData.append(
-      "microsite",
-      JSON.stringify(selectedMicrocity?.map((item) => item.value) || [])
-    );
-    formData.append(
-      "amenties",
-      JSON.stringify(selectedAmenties?.map((item) => item.value) || [])
-    );
-    formData.append(
-      "facility",
-      JSON.stringify(selectedFacility?.map((item) => item.value) || [])
-    );
-    formData.append(
-      "relatedProperties",
-      JSON.stringify(selectedRelatedProperties?.map((item) => item.value) || [])
-    );
+    formData.append("propertySubCategory", JSON.stringify(selectedSubCategory?.map((item) => item.value) || []));
+    formData.append("topology", JSON.stringify(selectedTopology?.map((item) => item.value) || []));
+    formData.append("microsite", JSON.stringify(selectedMicrocity?.map((item) => item.value) || []));
+    formData.append("amenties", JSON.stringify(selectedAmenties?.map((item) => item.value) || []));
+    formData.append("facility", JSON.stringify(selectedFacility?.map((item) => item.value) || []));
+    formData.append("relatedProperties", JSON.stringify(selectedRelatedProperties?.map((item) => item.value) || []));
 
     // Dates and dropdowns
     formData.append("completionOn", projectFormData.completionOn);
@@ -225,7 +222,9 @@ export default function page() {
     setIsLoading(true);
     try {
       const response = await addProperty(formData); // call server action for create property
-      console.log(response);
+      if (response.success) {
+        router.push(`/dashboard/property/form?projectId=${response?.data?.projectName}`); // set project id on prams
+      }
     } catch (e) {
       console.log(e?.message);
     } finally {
@@ -236,9 +235,7 @@ export default function page() {
   // fetch sub category on the basis of select project name
   const fetchSubCategory = async () => {
     try {
-      const response = await fetchPropertySubCategory(
-        selectedProject?.completeData?.propertyCategory?._id
-      );
+      const response = await fetchPropertySubCategory(selectedProject?.completeData?.propertyCategory?._id);
       const data = response?.data?.map((v, i) => ({
         label: v?.subCategoryName,
         value: v?._id,
@@ -252,9 +249,7 @@ export default function page() {
   // fetch topology on the basis of selected project name
   const fetchTopology = async () => {
     try {
-      const response = await fetchPropertyTopology(
-        selectedProject?.completeData?.propertyCategory?._id
-      );
+      const response = await fetchPropertyTopology(selectedProject?.completeData?.propertyCategory?._id);
       const data = response?.data?.map((v, i) => ({
         label: v?.name,
         value: v?._id,
@@ -268,9 +263,7 @@ export default function page() {
   // fetch microcity on the basis of selected project name
   const fetchMicrocity = async () => {
     try {
-      const response = await fetchPropertyMicrocity(
-        selectedProject?.completeData?.city?._id
-      );
+      const response = await fetchPropertyMicrocity(selectedProject?.completeData?.city?._id);
       const data = response?.data?.map((v, i) => ({
         label: v?.name,
         value: v?._id,
@@ -297,33 +290,55 @@ export default function page() {
   const handleSubmitPropertyImage = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append(
-      "propertyImageTable",
-      propertyImageFormData?.propertyImageTable
-    );
-    formData.append(
-      "propertyTitleTable",
-      propertyImageFormData?.propertyTitleTable
-    );
-    formData.append(
-      "propertyAltTable",
-      propertyImageFormData?.propertyAltTable
-    );
+    formData.append("galleryImageTable", galleryFormData?.galleryImageTable);
+    formData.append("galleryTitleTable", galleryFormData?.galleryTitleTable);
+    formData.append("galleryAltTable", galleryFormData?.galleryAltTable);
+    formData.append("porjectNameID", projectID);
+
     setIsPropertyImageDataLoding(true);
+    const response = isEditPropertyImageId ? await updatePropertyImage(isEditPropertyImageId, formData) : await addPropertyImage(formData);
     try {
-      const response = await addPropertyImage(formData);
       if (response.success) {
         fetchAllPropertyImage();
         setPropertyImageData({
-          propertyImageTable: "",
-          propertyTitleTable: "",
-          propertyAltTable: "",
+          galleryImageTable: "",
+          galleryTitleTable: "",
+          galleryAltTable: "",
         });
+        setIsEditPropertyImageId(null); // reset edit property id
+        if (propertyImageRef.current) propertyImageRef.current.value = "";
       }
     } catch (e) {
       console.log(e?.message);
     } finally {
       setIsPropertyImageDataLoding(false);
+    }
+  };
+
+  // Add gallery
+  const handleSubmitGallery = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("galleryImageTable", galleryFormData?.galleryImageTable);
+    formData.append("galleryTitleTable", galleryFormData?.galleryTitleTable);
+    formData.append("galleryAltTable", galleryFormData?.galleryAltTable);
+    formData.append("porjectNameID", projectID);
+
+    // setIsPropertyImageDataLoding(true);
+    try {
+      const response = isEditGalleryId ? await updateGallery(isEditGalleryId, formData) : await addGallery(formData);
+      fetchGalleryData();
+      setGalleryFormData({
+        galleryImageTable: "",
+        galleryTitleTable: "",
+        galleryAltTable: "",
+      });
+      setIsEditGalleryId(null); // reset edit gallery id
+      if (galleryRef.current) galleryRef.current.value = "";
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      // setIsPropertyImageDataLoding(false);
     }
   };
   // fetch all property image
@@ -340,6 +355,45 @@ export default function page() {
   useEffect(() => {
     fetchAllPropertyImage();
   }, [hasImageRowDeleted]);
+  // fetch single property
+  const fetchSinglePropertyImageCall = async () => {
+    const response = await fetchSinglePropertyImage(isEditPropertyImageId);
+    setPropertyImageData({
+      propertyImageTable: response?.image,
+      propertyTitleTable: response?.title,
+      propertyAltTable: response?.alt,
+    });
+  };
+  useEffect(() => {
+    if (isEditPropertyImageId) {
+      fetchSinglePropertyImageCall();
+    }
+  }, [isEditPropertyImageId]);
+
+  // fetch all gallery images
+  const fetchGalleryData = async () => {
+    const response = await fetchGallery();
+    if (response.length > 0) {
+      setHasGalleryData(response);
+    }
+  };
+  useEffect(() => {
+    fetchGalleryData(); // fetch gallery
+  }, [hasGalleryRowDeleted]);
+  // fetch single property
+  const fetchSingleGalleryCall = async () => {
+    const response = await fetchSingleGallery(isEditGalleryId);
+    setGalleryFormData({
+      galleryImageTable: response?.image,
+      galleryTitleTable: response?.title,
+      galleryAltTable: response?.alt,
+    });
+  };
+  useEffect(() => {
+    if (isEditGalleryId) {
+      fetchSingleGalleryCall();
+    }
+  }, [isEditGalleryId]);
 
   return (
     <>
@@ -353,12 +407,8 @@ export default function page() {
                   <p>Loading...</p>
                 ) : projectList && projectList.length === 0 ? (
                   <div className="space-y-2">
-                    <label className="font-medium text-gray-700">
-                      Project Name
-                    </label>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Create Active Project
-                    </p>
+                    <label className="font-medium text-gray-700">Project Name</label>
+                    <p className="mt-1 text-sm text-gray-500">Create Active Project</p>
                   </div>
                 ) : (
                   <SelectDropdown
@@ -382,12 +432,7 @@ export default function page() {
               />
             </div>
             <div className="col-span-full">
-              <Textarea
-                label="Address"
-                name="address"
-                value={projectFormData?.address}
-                onChange={handleChange}
-              />
+              <Textarea label="Address" name="address" value={projectFormData?.address} onChange={handleChange} />
             </div>
             <div className="sm:col-span-6">
               <Input
@@ -399,44 +444,18 @@ export default function page() {
               />
             </div>
             <div className="sm:col-span-6">
-              <Input
-                label="Property Slug *"
-                placeholder="Enter your slug name"
-                name="slug"
-                value={slug}
-                disabled
-                className="cursor-not-allowed"
-              />
+              <Input label="Property Slug *" placeholder="Enter your slug name" name="slug" value={slug} disabled className="cursor-not-allowed" />
             </div>
             <div className="sm:col-span-2">
-              <Dropdown
-                label="Price Type"
-                name="priceType"
-                items={PriceType}
-                handleChange={handleChange}
-                value={projectFormData.priceType}
-              />
+              <Dropdown label="Price Type" name="priceType" items={PriceType} handleChange={handleChange} value={projectFormData.priceType} />
             </div>
-            {(projectFormData?.priceType === "Fixed" ||
-              projectFormData?.priceType === "") && (
+            {(projectFormData?.priceType === "Fixed" || projectFormData?.priceType === "") && (
               <>
                 <div className="col-span-6">
-                  <Input
-                    label="Price"
-                    placeholder="Enter your price"
-                    name="price"
-                    value={projectFormData.price}
-                    onChange={handleChange}
-                  />
+                  <Input label="Price" placeholder="Enter your price" name="price" value={projectFormData.price} onChange={handleChange} />
                 </div>
                 <div className="sm:col-span-4">
-                  <Dropdown
-                    label="Price Unit"
-                    name="priceUnit"
-                    items={PriceUnit}
-                    handleChange={handleChange}
-                    value={projectFormData.priceUnit}
-                  />
+                  <Dropdown label="Price Unit" name="priceUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.priceUnit} />
                 </div>
               </>
             )}
@@ -444,79 +463,31 @@ export default function page() {
             {projectFormData?.priceType === "Range" && (
               <>
                 <div className="col-span-2">
-                  <Input
-                    label="Min Price"
-                    placeholder="Enter your price"
-                    name="minPrice"
-                    value={projectFormData.minPrice}
-                    onChange={handleChange}
-                  />
+                  <Input label="Min Price" placeholder="Enter your price" name="minPrice" value={projectFormData.minPrice} onChange={handleChange} />
                 </div>
                 <div className="sm:col-span-3">
-                  <Dropdown
-                    label="Min Price Unit"
-                    name="minUnit"
-                    items={PriceUnit}
-                    handleChange={handleChange}
-                    value={projectFormData.minUnit}
-                  />
+                  <Dropdown label="Min Price Unit" name="minUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.minUnit} />
                 </div>
                 <div className="col-span-3">
-                  <Input
-                    label="Max Price"
-                    placeholder="Enter your price"
-                    name="maxPrice"
-                    value={projectFormData.maxPrice}
-                    onChange={handleChange}
-                  />
+                  <Input label="Max Price" placeholder="Enter your price" name="maxPrice" value={projectFormData.maxPrice} onChange={handleChange} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Dropdown
-                    label="Max Price Unit"
-                    name="maxUnit"
-                    items={PriceUnit}
-                    handleChange={handleChange}
-                    value={projectFormData.maxUnit}
-                  />
+                  <Dropdown label="Max Price Unit" name="maxUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.maxUnit} />
                 </div>
               </>
             )}
 
             <div className="sm:col-span-3">
-              <Input
-                label="Min Size"
-                placeholder="Enter your min size"
-                name="minSize"
-                value={projectFormData.minSize}
-                onChange={handleChange}
-              />
+              <Input label="Min Size" placeholder="Enter your min size" name="minSize" value={projectFormData.minSize} onChange={handleChange} />
             </div>
             <div className="sm:col-span-3">
-              <Dropdown
-                label="Min Size Unit"
-                name="minSizeUnit"
-                items={minSizeUnit}
-                handleChange={handleChange}
-                value={projectFormData.minSizeUnit}
-              />
+              <Dropdown label="Min Size Unit" name="minSizeUnit" items={minSizeUnit} handleChange={handleChange} value={projectFormData.minSizeUnit} />
             </div>
             <div className="sm:col-span-3">
-              <Input
-                label="Max Size"
-                placeholder="Enter your maxSize"
-                name="maxSize"
-                value={projectFormData.maxSize}
-                onChange={handleChange}
-              />
+              <Input label="Max Size" placeholder="Enter your maxSize" name="maxSize" value={projectFormData.maxSize} onChange={handleChange} />
             </div>
             <div className="sm:col-span-3">
-              <Dropdown
-                label="Max Size Unit"
-                name="maxSizeUnit"
-                items={maxSizeUnit}
-                handleChange={handleChange}
-                value={projectFormData.maxSizeUnit}
-              />
+              <Dropdown label="Max Size Unit" name="maxSizeUnit" items={maxSizeUnit} handleChange={handleChange} value={projectFormData.maxSizeUnit} />
             </div>
 
             <div className="sm:col-span-4">
@@ -556,9 +527,7 @@ export default function page() {
               ) : amentiesList && amentiesList.length === 0 ? (
                 <div className="space-y-2">
                   <label className="font-medium text-gray-700">Amenties</label>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Create Active Amenties
-                  </p>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Amenties</p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -577,9 +546,7 @@ export default function page() {
               ) : facilityList && facilityList.length === 0 ? (
                 <div className="space-y-2">
                   <label className="font-medium text-gray-700">Facility</label>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Create Active Facility
-                  </p>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Facility</p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -597,12 +564,8 @@ export default function page() {
                 <p>Loading...</p>
               ) : microcityList && microcityList.length === 0 ? (
                 <div className="space-y-2">
-                  <label className="font-medium text-gray-700">
-                    Related Property Location
-                  </label>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Create Active Microcity
-                  </p>
+                  <label className="font-medium text-gray-700">Related Property Location</label>
+                  <p className="mt-1 text-sm text-gray-500">Create Active Microcity</p>
                 </div>
               ) : (
                 <SelectDropdown
@@ -629,32 +592,15 @@ export default function page() {
             <div className="sm:col-span-4">
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                 <div className="col-span-6">
-                  <Dropdown
-                    label="Possion On"
-                    name="possionNumber"
-                    items={possionNumber}
-                    handleChange={handleChange}
-                    value={projectFormData.possionNumber}
-                  />
+                  <Dropdown label="Possion On" name="possionNumber" items={possionNumber} handleChange={handleChange} value={projectFormData.possionNumber} />
                 </div>
                 <div className="col-span-6">
-                  <Dropdown
-                    name="possionWMY"
-                    items={possionWMY}
-                    handleChange={handleChange}
-                    value={projectFormData.possionWMY}
-                  />
+                  <Dropdown name="possionWMY" items={possionWMY} handleChange={handleChange} value={projectFormData.possionWMY} />
                 </div>
               </div>
             </div>
             <div className="sm:col-span-4">
-              <Dropdown
-                label="Property Order"
-                name="order"
-                items={propertyOrderBy}
-                handleChange={handleChange}
-                value={projectFormData.order}
-              />
+              <Dropdown label="Property Order" name="order" items={propertyOrderBy} handleChange={handleChange} value={projectFormData.order} />
             </div>
 
             <div className="sm:col-span-4">
@@ -688,30 +634,14 @@ export default function page() {
             </div>
 
             <div className="col-span-full">
-              <CustomEditor
-                onChange={setEditorData}
-                label="Long Description"
-                data={editorData}
-              />
+              <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
             </div>
           </div>
 
           <div className="grid gap-3 mt-6">
-            <CustomToggle
-              label="Is Featured"
-              onCheckedChange={(checked) => setIsFeatured(checked)}
-              checked={isFeatured}
-            />
-            <CustomToggle
-              label="Index"
-              onCheckedChange={(checked) => setIndex(checked)}
-              checked={isIndex}
-            />
-            <CustomToggle
-              label="status (Active / Inactive)"
-              onCheckedChange={(checked) => setIsActive(checked)}
-              checked={isActive}
-            />
+            <CustomToggle label="Is Featured" onCheckedChange={(checked) => setIsFeatured(checked)} checked={isFeatured} />
+            <CustomToggle label="Index" onCheckedChange={(checked) => setIndex(checked)} checked={isIndex} />
+            <CustomToggle label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
           </div>
 
           <div className="text-center my-10">
@@ -733,8 +663,20 @@ export default function page() {
                 type="file"
                 placeholder="Enter your property image"
                 name="propertyImageTable"
+                ref={propertyImageRef}
                 onChange={(e) => handlePropertyImageChange(e, true)}
               />
+              {propertyImageFormData?.propertyImageTable && (
+                <img
+                  src={
+                    propertyImageRef.current?.files?.length > 0
+                      ? URL?.createObjectURL(propertyImageFormData?.propertyImageTable)
+                      : propertyImageFormData?.propertyImageTable
+                  }
+                  alt="Thumbnail Preview"
+                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                />
+              )}
             </div>
             <div className="col-span-3">
               <Input
@@ -760,7 +702,12 @@ export default function page() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isPropertyImageDataLoding}
+                disabled={
+                  isPropertyImageDataLoding ||
+                  !propertyImageFormData?.propertyImageTable ||
+                  !propertyImageFormData?.propertyTitleTable ||
+                  !propertyImageFormData?.propertyAltTable
+                }
               >
                 {isPropertyImageDataLoding ? "Loding..." : "save"}
               </Button>
@@ -772,13 +719,73 @@ export default function page() {
           <PropertyImageTable
             propertyImageDataContainer={propertyImageDataContainer}
             setHasImageRowDeleted={setHasImageRowDeleted}
+            setIsEditPropertyImageId={setIsEditPropertyImageId}
           />
         </div>
       </CustomAccordion>
 
       {/* Property Gallery Image */}
       <CustomAccordion heading="Property Gallery Image">
-        <p>lorem 20222</p>
+        {/* Add Property gallery form */}
+        <form onSubmit={handleSubmitGallery}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="col-span-3">
+              <Input
+                label="Property Image"
+                type="file"
+                placeholder="Enter your property image"
+                name="galleryImageTable"
+                ref={galleryRef}
+                onChange={(e) => handleGalleryChange(e, true)}
+              />
+              {galleryFormData?.galleryImageTable && (
+                <img
+                  src={galleryRef.current?.files?.length > 0 ? URL?.createObjectURL(galleryFormData?.galleryImageTable) : galleryFormData?.galleryImageTable}
+                  alt="Thumbnail Preview"
+                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                />
+              )}
+            </div>
+            <div className="col-span-3">
+              <Input
+                label="Title"
+                type="text"
+                placeholder="Enter your title"
+                name="galleryTitleTable"
+                onChange={(e) => handleGalleryChange(e)}
+                value={galleryFormData?.galleryTitleTable}
+              />
+            </div>
+            <div className="col-span-3">
+              <Input
+                label="Alt"
+                type="text"
+                placeholder="Enter your alt"
+                name="galleryAltTable"
+                onChange={handleGalleryChange}
+                value={galleryFormData?.galleryAltTable}
+              />
+            </div>
+            <div className="col-span-3 mt-[32px]">
+              <Button
+                type="submit"
+                className="w-full"
+                // disabled={
+                //   isPropertyImageDataLoding || !galleryFormData?.galleryImageTable || !galleryFormData?.galleryTitleTable || !galleryFormData?.galleryAltTable
+                // }
+              >
+                save
+                {/* {isPropertyImageDataLoding ? "Loding..." : "save"} */}
+              </Button>
+            </div>
+          </div>
+        </form>
+        {/* Table for add property gallery form */}
+        <div className="mt-10">
+          {hasGalleryData.length > 0 && (
+            <PropertyGalleryTable hasGalleryData={hasGalleryData} setHasGalleryRowDeleted={setHasGalleryRowDeleted} setIsEditGalleryId={setIsEditGalleryId} />
+          )}
+        </div>
       </CustomAccordion>
 
       {/* floor plan */}

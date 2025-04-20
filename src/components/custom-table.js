@@ -15,7 +15,7 @@ export default function Table({ data = [], columns }) {
     autoResetPageIndex: false, // ✅ Prevents reset on data change
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 5,
       },
     },
     globalFilterFn: (row, columnId, filterValue) => {
