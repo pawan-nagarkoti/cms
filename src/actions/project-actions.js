@@ -3,6 +3,7 @@
 import { convertBase64 } from "@/lib/cloudinary";
 import connectToDB from "@/lib/db";
 import Microcities from "@/models/microcities";
+import Floor from "@/models/property/floorPlan-models";
 import Gallery from "@/models/property/gallery-models";
 // import Facility from "@/models/facility";
 // import Faq from "@/models/property/faq-models";
@@ -11,6 +12,7 @@ import Gallery from "@/models/property/gallery-models";
 import Image from "@/models/property/image-models";
 // import OtherInformation from "@/models/property/other-information-models";
 import Property from "@/models/property/property-models";
+import Rera from "@/models/property/rera-models";
 // import Rera from "@/models/property/rera-models";
 import PropertySubCategory from "@/models/propertySubCategory";
 import Topology from "@/models/topology";
@@ -351,6 +353,145 @@ export async function updateGallery(id, formData) {
     projectId: formData.get("porjectNameID"),
   };
   const response = await Gallery.findOneAndUpdate({ _id: id }, data, { new: true });
+  return {
+    success: true,
+    data: response.toObject(),
+  };
+}
+// Add floor plan
+export async function addFloorPlan(formData) {
+  await connectToDB();
+
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  console.log();
+  const image = await convertImagesIntoUrl(getImage?.image, "image", formData); // convert image url
+
+  const data = {
+    type: formData.get("floorType"),
+    price: formData.get("floorPrice"),
+    title: formData.get("floorImageTitle"),
+    alt: formData.get("floorAlt"),
+    image,
+  };
+  const response = await Floor.create(data);
+  return response.toObject();
+}
+// fetch all property image
+export async function fetchAllFloorPlan() {
+  await connectToDB();
+  try {
+    const response = await Floor.find({});
+    return response;
+  } catch (e) {
+    console.log(e?.message);
+    return {
+      success: false,
+      message: e?.message,
+    };
+  }
+}
+// Delete floor plan
+export async function deleteFloorPlan(id) {
+  await connectToDB();
+  try {
+    const response = await Floor.findByIdAndDelete(id);
+    return response.toObject();
+  } catch (error) {
+    console.log(error?.message);
+    return {
+      success: false,
+      message: error?.message,
+    };
+  }
+}
+// fetch single floor plan
+export async function fetchSingleFloorPlan(id) {
+  console.log("id", id);
+  await connectToDB();
+  const response = await Floor.findById(id);
+  return JSON.parse(JSON.stringify(response));
+}
+// update floor plan
+export async function updateFloorPlan(id, formData) {
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  const image = await convertImagesIntoUrl(getImage?.image, "image", formData); // convert image url
+
+  const data = {
+    type: formData.get("floorType"),
+    price: formData.get("floorPrice"),
+    title: formData.get("floorImageTitle"),
+    alt: formData.get("floorAlt"),
+    image,
+  };
+  const response = await Floor.findOneAndUpdate({ _id: id }, data, { new: true });
+  return {
+    success: true,
+    data: response.toObject(),
+  };
+}
+// Add rera
+export async function addRera(formData) {
+  await connectToDB();
+
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  console.log();
+  const image = await convertImagesIntoUrl(getImage?.image, "image", formData); // convert image url
+
+  const data = {
+    name: formData.get("name"),
+    number: formData.get("number"),
+    url: formData.get("url"),
+    image,
+  };
+  const response = await Rera.create(data);
+  return response.toObject();
+}
+// fetch all Rera
+export async function fetchAllRera() {
+  await connectToDB();
+  try {
+    const response = await Rera.find({});
+    return response;
+  } catch (e) {
+    console.log(e?.message);
+    return {
+      success: false,
+      message: e?.message,
+    };
+  }
+}
+// Delete rera
+export async function deleteRera(id) {
+  await connectToDB();
+  try {
+    const response = await Rera.findByIdAndDelete(id);
+    return response.toObject();
+  } catch (error) {
+    console.log(error?.message);
+    return {
+      success: false,
+      message: error?.message,
+    };
+  }
+}
+// fetch single floor plan
+export async function fetchSingleRera(id) {
+  await connectToDB();
+  const response = await Rera.findById(id);
+  return JSON.parse(JSON.stringify(response));
+}
+// update floor plan
+export async function updateRera(id, formData) {
+  const getImage = Object.fromEntries(formData.entries()); // get form data after that convert into readble form
+  const image = await convertImagesIntoUrl(getImage?.image, "image", formData); // convert image url
+
+  const data = {
+    name: formData.get("name"),
+    number: formData.get("number"),
+    url: formData.get("url"),
+    image,
+  };
+  const response = await Rera.findOneAndUpdate({ _id: id }, data, { new: true });
   return {
     success: true,
     data: response.toObject(),

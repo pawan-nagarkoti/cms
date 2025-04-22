@@ -13,18 +13,26 @@ import useSlug from "@/hooks/use-slug";
 import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
 // import CustomEditor from "@/components/forms/CustomEditor";
 import {
+  addFloorPlan,
   addGallery,
   addProperty,
   addPropertyImage,
+  addRera,
+  fetchAllFloorPlan,
+  fetchAllRera,
   fetchGallery,
   fetchPropertyImage,
   fetchPropertyMicrocity,
   fetchPropertySubCategory,
   fetchPropertyTopology,
+  fetchSingleFloorPlan,
   fetchSingleGallery,
   fetchSinglePropertyImage,
+  fetchSingleRera,
+  updateFloorPlan,
   updateGallery,
   updatePropertyImage,
+  updateRera,
 } from "@/actions/project-actions";
 import PropertyImageTable from "@/components/property-table/Property-Image-Table";
 
@@ -32,6 +40,8 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import PropertyGalleryTable from "@/components/property-table/Property-gallery-table";
+import FloorPlanTable from "@/components/property-table/Floor-plan-table";
+import ReraTable from "@/components/property-table/Rera-table";
 
 const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
   ssr: false,
@@ -111,6 +121,34 @@ export default function page() {
     galleryTitleTable: "",
     galleryAltTable: "",
   });
+
+  // Add floor plan states ===================================================================
+  const [floorPlan, setFloorPlan] = useState({
+    floorType: "",
+    floorPrice: "",
+    floorImageTitle: "",
+    floorAlt: "",
+    image: "",
+  });
+
+  const [hasFloorPlanData, setHasFloorPlanData] = useState([]);
+  const [hasFloorPlanRowDeleted, setHasFloorPlanRowDeleted] = useState(false);
+  const floorPlanRef = useRef(null);
+  const [isFloorPlanLoading, setIsFloorPlanLoading] = useState(false);
+  const [isFloorPlanEditId, setIsFloorPlanEditId] = useState(null);
+
+  // Add rera detail states =======================================================================
+  const [reraData, setReraData] = useState({
+    name: "",
+    number: "",
+    url: "",
+    image: "",
+  });
+  const [hasReraData, setHasReraData] = useState([]);
+  const [hasReraRowDeleted, setHasReraRowDeleted] = useState(false);
+  const reraRef = useRef(null);
+  const [isReraLoading, setIsReraLoading] = useState(false);
+  const [isReraEditId, setIsReraEditId] = useState(null);
 
   // Propery all fields onChange common function
   const handleChange = (e, file) => {
@@ -394,6 +432,154 @@ export default function page() {
       fetchSingleGalleryCall();
     }
   }, [isEditGalleryId]);
+
+  // ============================== Floor plan ============================================
+  // Add floor plan
+  const handleSubmitFloorPlan = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("floorAlt", floorPlan.floorAlt);
+    formData.append("floorImageTitle", floorPlan.floorImageTitle);
+    formData.append("floorPrice", floorPlan.floorPrice);
+    formData.append("floorType", floorPlan.floorType);
+    formData.append("image", floorPlan.image);
+
+    setIsFloorPlanLoading(true);
+    try {
+      const response = isFloorPlanEditId ? await updateFloorPlan(isFloorPlanEditId, formData) : await addFloorPlan(formData);
+      if (response) {
+        setFloorPlan({
+          floorAlt: "",
+          floorImageTitle: "",
+          floorPrice: "",
+          floorType: "",
+        });
+        fetchFloorPlan();
+        if (floorPlanRef.current) floorPlanRef.current.value = "";
+      }
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      setIsFloorPlanLoading(false);
+    }
+  };
+
+  // Floor plan all fields onChange common function
+  const onChangeFloorPlan = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setFloorPlan({
+        ...floorPlan,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setFloorPlan({
+        ...floorPlan,
+        [name]: value,
+      });
+    }
+  };
+
+  // fetch all floor plan data
+  const fetchFloorPlan = async () => {
+    const response = await fetchAllFloorPlan();
+    if (response.length > 0) {
+      setHasFloorPlanData(response);
+    }
+  };
+  useEffect(() => {
+    fetchFloorPlan(); // fetch all flor plan data
+  }, [hasFloorPlanRowDeleted]);
+
+  // fetch single property
+  const fetchSinglehFloorPlanData = async () => {
+    const response = await fetchSingleFloorPlan(isFloorPlanEditId);
+    setFloorPlan({
+      floorType: response?.type,
+      floorPrice: response?.price,
+      floorImageTitle: response?.title,
+      floorAlt: response?.alt,
+      image: response?.image,
+    });
+  };
+  useEffect(() => {
+    fetchSinglehFloorPlanData();
+  }, [isFloorPlanEditId]);
+
+  // ============================= RERA DETAIL ==============================================
+  // Add floor plan
+  const handleSubmitRera = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("name", reraData.name);
+    formData.append("number", reraData.number);
+    formData.append("url", reraData.url);
+    formData.append("image", reraData.image);
+
+    setIsReraLoading(true);
+    try {
+      const response = isReraEditId ? await updateRera(isReraEditId, formData) : await addRera(formData);
+      if (response) {
+        setReraData({
+          name: "",
+          number: "",
+          url: "",
+          image: "",
+        });
+        fetchReraData();
+        if (reraRef.current) reraRef.current.value = "";
+      }
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      setIsReraLoading(false);
+    }
+  };
+
+  // Floor plan all fields onChange common function
+  const onChangeRera = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setReraData({
+        ...reraData,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setReraData({
+        ...reraData,
+        [name]: value,
+      });
+    }
+  };
+
+  // fetch all floor plan data
+  const fetchReraData = async () => {
+    const response = await fetchAllRera();
+    if (response.length > 0) {
+      setHasReraData(response);
+    }
+  };
+  useEffect(() => {
+    fetchReraData(); // fetch all flor plan data
+  }, [hasReraRowDeleted]);
+
+  // fetch single property
+  const fetchReraSingleData = async () => {
+    const response = await fetchSingleRera(isReraEditId);
+    setReraData({
+      name: response?.name,
+      number: response?.number,
+      url: response?.url,
+      image: response?.image,
+    });
+  };
+  useEffect(() => {
+    fetchReraSingleData();
+  }, [isReraEditId]);
 
   return (
     <>
@@ -790,7 +976,84 @@ export default function page() {
 
       {/* floor plan */}
       <CustomAccordion heading="Floor Plan">
-        <p>lorem 20222</p>
+        <form onSubmit={handleSubmitFloorPlan}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="col-span-2">
+              <Input
+                label="Floor Type"
+                type="text"
+                placeholder="Enter your title"
+                name="floorType"
+                onChange={(e) => onChangeFloorPlan(e)}
+                value={floorPlan?.floorType}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="Floor Price"
+                type="text"
+                placeholder="Enter your Floor Price"
+                name="floorPrice"
+                onChange={(e) => onChangeFloorPlan(e)}
+                value={floorPlan?.floorPrice}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="Floor Image Title"
+                type="text"
+                placeholder="Enter your Floor Image Title"
+                name="floorImageTitle"
+                onChange={(e) => onChangeFloorPlan(e)}
+                value={floorPlan?.floorImageTitle}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="Floor ALT"
+                type="text"
+                placeholder="Enter your Floor ALT"
+                name="floorAlt"
+                onChange={(e) => onChangeFloorPlan(e)}
+                value={floorPlan?.floorAlt}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input label="Image" type="file" placeholder="Enter your image" ref={floorPlanRef} name="image" onChange={(e) => onChangeFloorPlan(e, true)} />
+              {floorPlan?.image && (
+                <img
+                  src={floorPlanRef.current?.files?.length > 0 ? URL?.createObjectURL(floorPlan?.image) : floorPlan?.image}
+                  alt="Thumbnail Preview"
+                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                />
+              )}
+            </div>
+            <div className="col-span-2 mt-[32px]">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isFloorPlanLoading ||
+                  !floorPlan?.floorType ||
+                  !floorPlan?.floorPrice ||
+                  !floorPlan?.floorImageTitle ||
+                  !floorPlan?.floorAlt ||
+                  !floorPlan?.image
+                }
+              >
+                {isFloorPlanLoading ? "Loading..." : "save"}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <div className="mt-10">
+          <FloorPlanTable
+            hasFloorPlanData={hasFloorPlanData}
+            setHasFloorPlanRowDeleted={setHasFloorPlanRowDeleted}
+            setIsFloorPlanEditId={setIsFloorPlanEditId}
+          />
+        </div>
       </CustomAccordion>
 
       {/* Faq section */}
@@ -800,7 +1063,45 @@ export default function page() {
 
       {/* Reara details */}
       <CustomAccordion heading="Rera Details">
-        <p>lorem 20222</p>
+        <form onSubmit={handleSubmitRera}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="col-span-2">
+              <Input label="RERA Name" type="text" placeholder="Enter your name" name="name" onChange={(e) => onChangeRera(e)} value={reraData?.name} />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="RERA Number"
+                type="text"
+                placeholder="Enter your RERA Number"
+                name="number"
+                onChange={(e) => onChangeRera(e)}
+                value={reraData?.number}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input label="Rera URL" type="text" placeholder="Enter your Rera URL" name="url" onChange={(e) => onChangeRera(e)} value={reraData?.url} />
+            </div>
+            <div className="col-span-4">
+              <Input label="Image" type="file" placeholder="Enter your image" ref={reraRef} name="image" onChange={(e) => onChangeRera(e, true)} />
+              {reraData?.image && (
+                <img
+                  src={reraRef.current?.files?.length > 0 ? URL?.createObjectURL(reraData?.image) : reraData?.image}
+                  alt="Thumbnail Preview"
+                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                />
+              )}
+            </div>
+            <div className="col-span-2 mt-[32px]">
+              <Button type="submit" className="w-full" disabled={isReraLoading || !reraData?.name || !reraData?.number || !reraData?.url || !reraData?.image}>
+                {isReraLoading ? "Loading..." : "save"}
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <div className="mt-10">
+          <ReraTable hasReraData={hasReraData} setHasReraRowDeleted={setHasReraRowDeleted} setIsReraEditId={setIsReraEditId} />
+        </div>
       </CustomAccordion>
 
       {/* other information container */}

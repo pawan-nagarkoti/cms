@@ -11,7 +11,7 @@ const ReraSchema = new mongoose.Schema(
     url: {
       type: String,
     },
-    qrCode: {
+    image: {
       type: String,
     },
   },
