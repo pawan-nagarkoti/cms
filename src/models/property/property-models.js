@@ -151,6 +151,21 @@ const propertySchema = new mongoose.Schema(
     featuredImageAlt: {
       type: String,
     },
+    geoRegion: {
+      type: String,
+    },
+    geoPostion: {
+      type: String,
+    },
+    geoPlacename: {
+      type: String,
+    },
+    youtubeLink: {
+      type: String,
+    },
+    icbm: {
+      type: String,
+    },
     featured: { type: Boolean, default: false },
     index: { type: Boolean, default: false },
     status: { type: Boolean, default: false },

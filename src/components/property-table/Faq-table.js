@@ -1,11 +1,11 @@
 "use client";
 
-import { deleteGallery } from "@/actions/project-actions";
+import { deleteFaq, deleteGallery } from "@/actions/project-actions";
 import CustomTable from "@/components/custom-table";
 import DeleteModal from "@/components/modal/delete-modal";
 import { useState } from "react";
 
-export default function PropertyGalleryTable({ hasGalleryData = [], setHasGalleryRowDeleted, setIsEditGalleryId }) {
+export default function FaqTable({ hasFaq = [], setHasFaqDeleted, setIsFaqEditId }) {
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [isSingleRowData, setIsSingleRowData] = useState("");
 
@@ -16,19 +16,12 @@ export default function PropertyGalleryTable({ hasGalleryData = [], setHasGaller
       cell: (cellInfo) => cellInfo.row.index + 1,
     },
     {
-      header: "Image",
-      accessorKey: "image",
-      cell: (cellInfo) => (
-        <img src={cellInfo?.row?.original?.image} alt="Country" className="w-16 h-16 object-cover rounded-md border border-gray-300 shadow-sm mx-auto" />
-      ),
+      header: "FAQ Question",
+      accessorKey: "question",
     },
     {
-      header: "Image Title",
-      accessorKey: "title",
-    },
-    {
-      header: "Image Alt",
-      accessorKey: "alt",
+      header: "FAQ Answer",
+      accessorKey: "answer",
     },
     {
       header: "Action",
@@ -38,7 +31,7 @@ export default function PropertyGalleryTable({ hasGalleryData = [], setHasGaller
           <button
             className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300"
             onClick={() => {
-              setIsEditGalleryId(cellInfo?.row?.original?._id);
+              setIsFaqEditId(cellInfo?.row?.original?._id);
             }}
           >
             Edit
@@ -61,10 +54,9 @@ export default function PropertyGalleryTable({ hasGalleryData = [], setHasGaller
 
   // deleted row
   const handleDeletedRow = async () => {
-    const response = await deleteGallery(isSingleRowData?._id);
-    console.log(response);
+    const response = await deleteFaq(isSingleRowData?._id);
     if (response) {
-      setHasGalleryRowDeleted((prev) => !prev);
+      setHasFaqDeleted((prev) => !prev);
       setIsOpenDeleteModal(false);
     }
   };
@@ -72,7 +64,7 @@ export default function PropertyGalleryTable({ hasGalleryData = [], setHasGaller
   return (
     <>
       <div className="mt-5">
-        <CustomTable columns={columns} data={hasGalleryData} />
+        <CustomTable columns={columns} data={hasFaq} />
       </div>
       {isOpenDeleteModal && (
         <DeleteModal isOpenDeleteModal={isOpenDeleteModal} setIsOpenDeleteModal={setIsOpenDeleteModal} handleDeletedRow={handleDeletedRow} />

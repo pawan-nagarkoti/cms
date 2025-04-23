@@ -3,6 +3,7 @@
 import { convertBase64 } from "@/lib/cloudinary";
 import connectToDB from "@/lib/db";
 import Microcities from "@/models/microcities";
+import Faq from "@/models/property/faq-models";
 import Floor from "@/models/property/floorPlan-models";
 import Gallery from "@/models/property/gallery-models";
 // import Facility from "@/models/facility";
@@ -83,7 +84,6 @@ export async function fetchPropertyTopology(id) {
 
 // Find the  microcity based on the project city ID, which is retrieved when a project is selected from the project dropdown.
 export async function fetchPropertyMicrocity(id) {
-  console.log(id);
   await connectToDB();
   try {
     const response = await Microcities.find({ activeCity: id }).populate("activeCity").populate("activeState").populate("activeCountry").lean();
@@ -146,6 +146,12 @@ export async function addProperty(formData) {
       index: JSON.parse(formData.get("index") || "false"),
       status: JSON.parse(formData.get("status") || "false"),
 
+      geoRegion: formData.get("geoRegion"),
+      geoPostion: formData.get("geoPosition"),
+      geoPlacename: formData.get("geoPlacename"),
+      youtubeLink: formData.get("youtubeLink"),
+      icbm: formData.get("icbm"),
+
       propertySubCategory: JSON.parse(formData.get("propertySubCategory") || "[]"),
       topology: JSON.parse(formData.get("topology") || "[]"),
       microsite: JSON.parse(formData.get("microsite") || "[]"),
@@ -174,6 +180,24 @@ export async function addProperty(formData) {
       success: false,
       message: error.message,
     };
+  }
+}
+
+// fetch all property
+export async function FetchAllProperty() {
+  await connectToDB();
+  const response = await Property.find({}).sort({ createdAt: -1 }).populate("projectName").lean();
+  return response;
+}
+
+// delete property
+export async function deleteProperty(id) {
+  await connectToDB();
+  const response = await Property.findByIdAndDelete(id).lean();
+  // const response = await Property.deleteMany();
+
+  if (response) {
+    return response;
   }
 }
 
@@ -492,6 +516,64 @@ export async function updateRera(id, formData) {
     image,
   };
   const response = await Rera.findOneAndUpdate({ _id: id }, data, { new: true });
+  return {
+    success: true,
+    data: response.toObject(),
+  };
+}
+
+// Add faq
+export async function addFaq(formData) {
+  await connectToDB();
+
+  const data = {
+    question: formData.get("question"),
+    answer: formData.get("answer"),
+  };
+  const response = await Faq.create(data);
+  return response.toObject();
+}
+// fetch all Faq
+export async function fetchAllFaq() {
+  await connectToDB();
+  try {
+    const response = await Faq.find({});
+    return response;
+  } catch (e) {
+    console.log(e?.message);
+    return {
+      success: false,
+      message: e?.message,
+    };
+  }
+}
+// Delete rera
+export async function deleteFaq(id) {
+  await connectToDB();
+  try {
+    const response = await Faq.findByIdAndDelete(id);
+    return response.toObject();
+  } catch (error) {
+    console.log(error?.message);
+    return {
+      success: false,
+      message: error?.message,
+    };
+  }
+}
+// fetch single floor plan
+export async function fetchSingleFaq(id) {
+  await connectToDB();
+  const response = await Faq.findById(id);
+  return JSON.parse(JSON.stringify(response));
+}
+// update floor plan
+export async function updateFaq(id, formData) {
+  const data = {
+    question: formData.get("question"),
+    answer: formData.get("answer"),
+  };
+  const response = await Faq.findOneAndUpdate({ _id: id }, data, { new: true });
   return {
     success: true,
     data: response.toObject(),

@@ -13,11 +13,13 @@ import useSlug from "@/hooks/use-slug";
 import { maxSizeUnit, minSizeUnit, possionNumber, possionWMY, PriceType, PriceUnit, propertyOrderBy } from "@/config/constants";
 // import CustomEditor from "@/components/forms/CustomEditor";
 import {
+  addFaq,
   addFloorPlan,
   addGallery,
   addProperty,
   addPropertyImage,
   addRera,
+  fetchAllFaq,
   fetchAllFloorPlan,
   fetchAllRera,
   fetchGallery,
@@ -25,10 +27,12 @@ import {
   fetchPropertyMicrocity,
   fetchPropertySubCategory,
   fetchPropertyTopology,
+  fetchSingleFaq,
   fetchSingleFloorPlan,
   fetchSingleGallery,
   fetchSinglePropertyImage,
   fetchSingleRera,
+  updateFaq,
   updateFloorPlan,
   updateGallery,
   updatePropertyImage,
@@ -42,6 +46,7 @@ import { useSearchParams } from "next/navigation";
 import PropertyGalleryTable from "@/components/property-table/Property-gallery-table";
 import FloorPlanTable from "@/components/property-table/Floor-plan-table";
 import ReraTable from "@/components/property-table/Rera-table";
+import FaqTable from "@/components/property-table/Faq-table";
 
 const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
   ssr: false,
@@ -96,6 +101,11 @@ export default function page() {
     featuredImage: "",
     featuredImageTitle: "",
     featuredImageAlt: "",
+    geoRegion: "",
+    geoPosition: "",
+    geoPlacename: "",
+    youtubeLink: "",
+    icbm: "",
   });
   const slug = useSlug(projectFormData?.propertyTitle || "");
 
@@ -149,6 +159,17 @@ export default function page() {
   const reraRef = useRef(null);
   const [isReraLoading, setIsReraLoading] = useState(false);
   const [isReraEditId, setIsReraEditId] = useState(null);
+
+  // Faq section ==========================================================================
+  const [faq, setFaq] = useState({
+    question: "",
+    answer: "",
+  });
+  const [hasFaq, setHasFaq] = useState([]);
+  const [hasFaqDeleted, setHasFaqDeleted] = useState(false);
+  const faqRef = useRef(null);
+  const [isFaqLoading, setIsFaqLoading] = useState(false);
+  const [isFaqEditId, setIsFaqEditId] = useState(null);
 
   // Propery all fields onChange common function
   const handleChange = (e, file) => {
@@ -248,6 +269,13 @@ export default function page() {
     formData.append("featuredImage", projectFormData.featuredImage);
     formData.append("featuredImageTitle", projectFormData.featuredImageTitle);
     formData.append("featuredImageAlt", projectFormData.featuredImageAlt);
+
+    // other information
+    formData.append("geoRegion", projectFormData.geoRegion);
+    formData.append("geoPosition", projectFormData.geoPosition);
+    formData.append("geoPlacename", projectFormData.geoPlacename);
+    formData.append("youtubeLink", projectFormData.youtubeLink);
+    formData.append("icbm", projectFormData.icbm);
 
     // Description
     formData.append("longDescription", editorData);
@@ -581,10 +609,77 @@ export default function page() {
     fetchReraSingleData();
   }, [isReraEditId]);
 
+  // ====================== faq ===========================================
+  // Add faq
+  const handleSubmitFaq = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("question", faq.question);
+    formData.append("answer", faq.answer);
+
+    setIsFaqLoading(true);
+    try {
+      const response = isFaqEditId ? await updateFaq(isFaqEditId, formData) : await addFaq(formData);
+      if (response) {
+        setFaq({
+          question: "",
+          answer: "",
+        });
+        fetchFaqData();
+        if (faqRef.current) faqRef.current.value = "";
+      }
+    } catch (e) {
+      console.log(e?.message);
+    } finally {
+      setIsFaqLoading(false);
+    }
+  };
+
+  // Faq all fields onChange common function
+  const onChangeFaq = (e, file) => {
+    if (file) {
+      const name = e.target.name;
+      const value = e.target.files[0];
+      setFaq({
+        ...faq,
+        [name]: value,
+      });
+    } else {
+      const { name, value } = e.target;
+      setFaq({
+        ...faq,
+        [name]: value,
+      });
+    }
+  };
+
+  // fetch all floor faq
+  const fetchFaqData = async () => {
+    const response = await fetchAllFaq();
+    if (response.length > 0) {
+      setHasFaq(response);
+    }
+  };
+  useEffect(() => {
+    fetchFaqData(); // fetch all faq
+  }, [hasFaqDeleted]);
+
+  // fetch single faq
+  const fetchFaqSingleData = async () => {
+    const response = await fetchSingleFaq(isFaqEditId);
+    setFaq({
+      question: response?.question,
+      answer: response?.answer,
+    });
+  };
+  useEffect(() => {
+    fetchFaqSingleData();
+  }, [isFaqEditId]);
+
   return (
     <>
       {/* Project information container */}
-      <CustomAccordion heading="Project Information">
+      <CustomAccordion heading="Project Information" defaultOpen={true}>
         <form onSubmit={handleProjectInfo}>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
             <div className="sm:col-span-6">
@@ -819,6 +914,52 @@ export default function page() {
               />
             </div>
 
+            <div className="col-span-4">
+              <Input
+                label="Geo Region"
+                type="text"
+                placeholder="Enter your geo region"
+                name="geoRegion"
+                onChange={(e) => handleChange(e)}
+                value={projectFormData?.geoRegion}
+              />
+            </div>
+            <div className="col-span-4">
+              <Input
+                label="Geo Position"
+                type="text"
+                placeholder="Enter your Geo Position"
+                name="geoPosition"
+                onChange={(e) => handleChange(e)}
+                value={projectFormData?.geoPosition}
+              />
+            </div>
+            <div className="col-span-4">
+              <Input
+                label="Geo Placename"
+                type="text"
+                placeholder="Enter your Geo Placename"
+                name="geoPlacename"
+                onChange={(e) => handleChange(e)}
+                value={projectFormData?.geoPlacename}
+              />
+            </div>
+
+            <div className="col-span-4">
+              <Input
+                label="Youtube Link"
+                type="text"
+                placeholder="Enter your Youtube Link"
+                name="youtubeLink"
+                onChange={(e) => handleChange(e)}
+                value={projectFormData?.youtubeLink}
+              />
+            </div>
+
+            <div className="col-span-4">
+              <Input label="ICBM" type="text" placeholder="Enter your ICBM" name="icbm" onChange={(e) => handleChange(e)} value={projectFormData?.icbm} />
+            </div>
+
             <div className="col-span-full">
               <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
             </div>
@@ -839,275 +980,298 @@ export default function page() {
       </CustomAccordion>
 
       {/* Property Image */}
-      <CustomAccordion heading="Property Image">
-        {/* Add Property image form */}
-        <form onSubmit={handleSubmitPropertyImage}>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="col-span-3">
-              <Input
-                label="Property Image"
-                type="file"
-                placeholder="Enter your property image"
-                name="propertyImageTable"
-                ref={propertyImageRef}
-                onChange={(e) => handlePropertyImageChange(e, true)}
-              />
-              {propertyImageFormData?.propertyImageTable && (
-                <img
-                  src={
-                    propertyImageRef.current?.files?.length > 0
-                      ? URL?.createObjectURL(propertyImageFormData?.propertyImageTable)
-                      : propertyImageFormData?.propertyImageTable
-                  }
-                  alt="Thumbnail Preview"
-                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+      {projectID && (
+        <CustomAccordion heading="Property Image">
+          {/* Add Property image form */}
+          <form onSubmit={handleSubmitPropertyImage}>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div className="col-span-3">
+                <Input
+                  label="Property Image"
+                  type="file"
+                  placeholder="Enter your property image"
+                  name="propertyImageTable"
+                  ref={propertyImageRef}
+                  onChange={(e) => handlePropertyImageChange(e, true)}
                 />
-              )}
+                {propertyImageFormData?.propertyImageTable && (
+                  <img
+                    src={
+                      propertyImageRef.current?.files?.length > 0
+                        ? URL?.createObjectURL(propertyImageFormData?.propertyImageTable)
+                        : propertyImageFormData?.propertyImageTable
+                    }
+                    alt="Thumbnail Preview"
+                    className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                  />
+                )}
+              </div>
+              <div className="col-span-3">
+                <Input
+                  label="Title"
+                  type="text"
+                  placeholder="Enter your title"
+                  name="propertyTitleTable"
+                  onChange={(e) => handlePropertyImageChange(e)}
+                  value={propertyImageFormData?.propertyTitleTable}
+                />
+              </div>
+              <div className="col-span-3">
+                <Input
+                  label="Alt"
+                  type="text"
+                  placeholder="Enter your alt"
+                  name="propertyAltTable"
+                  onChange={handlePropertyImageChange}
+                  value={propertyImageFormData?.propertyAltTable}
+                />
+              </div>
+              <div className="col-span-3 mt-[32px]">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={
+                    isPropertyImageDataLoding ||
+                    !propertyImageFormData?.propertyImageTable ||
+                    !propertyImageFormData?.propertyTitleTable ||
+                    !propertyImageFormData?.propertyAltTable
+                  }
+                >
+                  {isPropertyImageDataLoding ? "Loding..." : "save"}
+                </Button>
+              </div>
             </div>
-            <div className="col-span-3">
-              <Input
-                label="Title"
-                type="text"
-                placeholder="Enter your title"
-                name="propertyTitleTable"
-                onChange={(e) => handlePropertyImageChange(e)}
-                value={propertyImageFormData?.propertyTitleTable}
-              />
-            </div>
-            <div className="col-span-3">
-              <Input
-                label="Alt"
-                type="text"
-                placeholder="Enter your alt"
-                name="propertyAltTable"
-                onChange={handlePropertyImageChange}
-                value={propertyImageFormData?.propertyAltTable}
-              />
-            </div>
-            <div className="col-span-3 mt-[32px]">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={
-                  isPropertyImageDataLoding ||
-                  !propertyImageFormData?.propertyImageTable ||
-                  !propertyImageFormData?.propertyTitleTable ||
-                  !propertyImageFormData?.propertyAltTable
-                }
-              >
-                {isPropertyImageDataLoding ? "Loding..." : "save"}
-              </Button>
-            </div>
+          </form>
+          {/* Table for add property image form */}
+          <div className="mt-10">
+            <PropertyImageTable
+              propertyImageDataContainer={propertyImageDataContainer}
+              setHasImageRowDeleted={setHasImageRowDeleted}
+              setIsEditPropertyImageId={setIsEditPropertyImageId}
+            />
           </div>
-        </form>
-        {/* Table for add property image form */}
-        <div className="mt-10">
-          <PropertyImageTable
-            propertyImageDataContainer={propertyImageDataContainer}
-            setHasImageRowDeleted={setHasImageRowDeleted}
-            setIsEditPropertyImageId={setIsEditPropertyImageId}
-          />
-        </div>
-      </CustomAccordion>
+        </CustomAccordion>
+      )}
 
       {/* Property Gallery Image */}
-      <CustomAccordion heading="Property Gallery Image">
-        {/* Add Property gallery form */}
-        <form onSubmit={handleSubmitGallery}>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="col-span-3">
-              <Input
-                label="Property Image"
-                type="file"
-                placeholder="Enter your property image"
-                name="galleryImageTable"
-                ref={galleryRef}
-                onChange={(e) => handleGalleryChange(e, true)}
-              />
-              {galleryFormData?.galleryImageTable && (
-                <img
-                  src={galleryRef.current?.files?.length > 0 ? URL?.createObjectURL(galleryFormData?.galleryImageTable) : galleryFormData?.galleryImageTable}
-                  alt="Thumbnail Preview"
-                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+      {projectID && (
+        <CustomAccordion heading="Property Gallery Image">
+          {/* Add Property gallery form */}
+          <form onSubmit={handleSubmitGallery}>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div className="col-span-3">
+                <Input
+                  label="Property Image"
+                  type="file"
+                  placeholder="Enter your property image"
+                  name="galleryImageTable"
+                  ref={galleryRef}
+                  onChange={(e) => handleGalleryChange(e, true)}
                 />
-              )}
+                {galleryFormData?.galleryImageTable && (
+                  <img
+                    src={galleryRef.current?.files?.length > 0 ? URL?.createObjectURL(galleryFormData?.galleryImageTable) : galleryFormData?.galleryImageTable}
+                    alt="Thumbnail Preview"
+                    className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                  />
+                )}
+              </div>
+              <div className="col-span-3">
+                <Input
+                  label="Title"
+                  type="text"
+                  placeholder="Enter your title"
+                  name="galleryTitleTable"
+                  onChange={(e) => handleGalleryChange(e)}
+                  value={galleryFormData?.galleryTitleTable}
+                />
+              </div>
+              <div className="col-span-3">
+                <Input
+                  label="Alt"
+                  type="text"
+                  placeholder="Enter your alt"
+                  name="galleryAltTable"
+                  onChange={handleGalleryChange}
+                  value={galleryFormData?.galleryAltTable}
+                />
+              </div>
+              <div className="col-span-3 mt-[32px]">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  // disabled={
+                  //   isPropertyImageDataLoding || !galleryFormData?.galleryImageTable || !galleryFormData?.galleryTitleTable || !galleryFormData?.galleryAltTable
+                  // }
+                >
+                  save
+                  {/* {isPropertyImageDataLoding ? "Loding..." : "save"} */}
+                </Button>
+              </div>
             </div>
-            <div className="col-span-3">
-              <Input
-                label="Title"
-                type="text"
-                placeholder="Enter your title"
-                name="galleryTitleTable"
-                onChange={(e) => handleGalleryChange(e)}
-                value={galleryFormData?.galleryTitleTable}
-              />
-            </div>
-            <div className="col-span-3">
-              <Input
-                label="Alt"
-                type="text"
-                placeholder="Enter your alt"
-                name="galleryAltTable"
-                onChange={handleGalleryChange}
-                value={galleryFormData?.galleryAltTable}
-              />
-            </div>
-            <div className="col-span-3 mt-[32px]">
-              <Button
-                type="submit"
-                className="w-full"
-                // disabled={
-                //   isPropertyImageDataLoding || !galleryFormData?.galleryImageTable || !galleryFormData?.galleryTitleTable || !galleryFormData?.galleryAltTable
-                // }
-              >
-                save
-                {/* {isPropertyImageDataLoding ? "Loding..." : "save"} */}
-              </Button>
-            </div>
+          </form>
+          {/* Table for add property gallery form */}
+          <div className="mt-10">
+            {hasGalleryData.length > 0 && (
+              <PropertyGalleryTable hasGalleryData={hasGalleryData} setHasGalleryRowDeleted={setHasGalleryRowDeleted} setIsEditGalleryId={setIsEditGalleryId} />
+            )}
           </div>
-        </form>
-        {/* Table for add property gallery form */}
-        <div className="mt-10">
-          {hasGalleryData.length > 0 && (
-            <PropertyGalleryTable hasGalleryData={hasGalleryData} setHasGalleryRowDeleted={setHasGalleryRowDeleted} setIsEditGalleryId={setIsEditGalleryId} />
-          )}
-        </div>
-      </CustomAccordion>
+        </CustomAccordion>
+      )}
 
       {/* floor plan */}
-      <CustomAccordion heading="Floor Plan">
-        <form onSubmit={handleSubmitFloorPlan}>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="col-span-2">
-              <Input
-                label="Floor Type"
-                type="text"
-                placeholder="Enter your title"
-                name="floorType"
-                onChange={(e) => onChangeFloorPlan(e)}
-                value={floorPlan?.floorType}
-              />
-            </div>
-            <div className="col-span-2">
-              <Input
-                label="Floor Price"
-                type="text"
-                placeholder="Enter your Floor Price"
-                name="floorPrice"
-                onChange={(e) => onChangeFloorPlan(e)}
-                value={floorPlan?.floorPrice}
-              />
-            </div>
-            <div className="col-span-2">
-              <Input
-                label="Floor Image Title"
-                type="text"
-                placeholder="Enter your Floor Image Title"
-                name="floorImageTitle"
-                onChange={(e) => onChangeFloorPlan(e)}
-                value={floorPlan?.floorImageTitle}
-              />
-            </div>
-            <div className="col-span-2">
-              <Input
-                label="Floor ALT"
-                type="text"
-                placeholder="Enter your Floor ALT"
-                name="floorAlt"
-                onChange={(e) => onChangeFloorPlan(e)}
-                value={floorPlan?.floorAlt}
-              />
-            </div>
-            <div className="col-span-2">
-              <Input label="Image" type="file" placeholder="Enter your image" ref={floorPlanRef} name="image" onChange={(e) => onChangeFloorPlan(e, true)} />
-              {floorPlan?.image && (
-                <img
-                  src={floorPlanRef.current?.files?.length > 0 ? URL?.createObjectURL(floorPlan?.image) : floorPlan?.image}
-                  alt="Thumbnail Preview"
-                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+      {projectID && (
+        <CustomAccordion heading="Floor Plan">
+          <form onSubmit={handleSubmitFloorPlan}>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div className="col-span-2">
+                <Input
+                  label="Floor Type"
+                  type="text"
+                  placeholder="Enter your title"
+                  name="floorType"
+                  onChange={(e) => onChangeFloorPlan(e)}
+                  value={floorPlan?.floorType}
                 />
-              )}
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="Floor Price"
+                  type="text"
+                  placeholder="Enter your Floor Price"
+                  name="floorPrice"
+                  onChange={(e) => onChangeFloorPlan(e)}
+                  value={floorPlan?.floorPrice}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="Floor Image Title"
+                  type="text"
+                  placeholder="Enter your Floor Image Title"
+                  name="floorImageTitle"
+                  onChange={(e) => onChangeFloorPlan(e)}
+                  value={floorPlan?.floorImageTitle}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="Floor ALT"
+                  type="text"
+                  placeholder="Enter your Floor ALT"
+                  name="floorAlt"
+                  onChange={(e) => onChangeFloorPlan(e)}
+                  value={floorPlan?.floorAlt}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input label="Image" type="file" placeholder="Enter your image" ref={floorPlanRef} name="image" onChange={(e) => onChangeFloorPlan(e, true)} />
+                {floorPlan?.image && (
+                  <img
+                    src={floorPlanRef.current?.files?.length > 0 ? URL?.createObjectURL(floorPlan?.image) : floorPlan?.image}
+                    alt="Thumbnail Preview"
+                    className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                  />
+                )}
+              </div>
+              <div className="col-span-2 mt-[32px]">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={
+                    isFloorPlanLoading ||
+                    !floorPlan?.floorType ||
+                    !floorPlan?.floorPrice ||
+                    !floorPlan?.floorImageTitle ||
+                    !floorPlan?.floorAlt ||
+                    !floorPlan?.image
+                  }
+                >
+                  {isFloorPlanLoading ? "Loading..." : "save"}
+                </Button>
+              </div>
             </div>
-            <div className="col-span-2 mt-[32px]">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={
-                  isFloorPlanLoading ||
-                  !floorPlan?.floorType ||
-                  !floorPlan?.floorPrice ||
-                  !floorPlan?.floorImageTitle ||
-                  !floorPlan?.floorAlt ||
-                  !floorPlan?.image
-                }
-              >
-                {isFloorPlanLoading ? "Loading..." : "save"}
-              </Button>
-            </div>
-          </div>
-        </form>
+          </form>
 
-        <div className="mt-10">
-          <FloorPlanTable
-            hasFloorPlanData={hasFloorPlanData}
-            setHasFloorPlanRowDeleted={setHasFloorPlanRowDeleted}
-            setIsFloorPlanEditId={setIsFloorPlanEditId}
-          />
-        </div>
-      </CustomAccordion>
+          <div className="mt-10">
+            <FloorPlanTable
+              hasFloorPlanData={hasFloorPlanData}
+              setHasFloorPlanRowDeleted={setHasFloorPlanRowDeleted}
+              setIsFloorPlanEditId={setIsFloorPlanEditId}
+            />
+          </div>
+        </CustomAccordion>
+      )}
 
       {/* Faq section */}
-      <CustomAccordion heading="Faq">
-        <p>lorem 20222</p>
-      </CustomAccordion>
+      {projectID && (
+        <CustomAccordion heading="Faq">
+          <form onSubmit={handleSubmitFaq}>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div className="col-span-5">
+                <Input label="Question" type="text" placeholder="Enter your qustion" name="question" onChange={(e) => onChangeFaq(e)} value={faq?.question} />
+              </div>
+              <div className="col-span-5">
+                <Input label="Answer" type="text" placeholder="Enter your answer" name="answer" onChange={(e) => onChangeFaq(e)} value={faq?.answer} />
+              </div>
+              <div className="col-span-2 mt-[32px]">
+                <Button type="submit" className="w-full" disabled={isFaqLoading || !faq?.question || !faq?.answer}>
+                  {isFaqLoading ? "Loading..." : "save"}
+                </Button>
+              </div>
+            </div>
+          </form>
+
+          <div className="mt-10">
+            <FaqTable hasFaq={hasFaq} setHasFaqDeleted={setHasFaqDeleted} setIsFaqEditId={setIsFaqEditId} />
+          </div>
+        </CustomAccordion>
+      )}
 
       {/* Reara details */}
-      <CustomAccordion heading="Rera Details">
-        <form onSubmit={handleSubmitRera}>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="col-span-2">
-              <Input label="RERA Name" type="text" placeholder="Enter your name" name="name" onChange={(e) => onChangeRera(e)} value={reraData?.name} />
-            </div>
-            <div className="col-span-2">
-              <Input
-                label="RERA Number"
-                type="text"
-                placeholder="Enter your RERA Number"
-                name="number"
-                onChange={(e) => onChangeRera(e)}
-                value={reraData?.number}
-              />
-            </div>
-            <div className="col-span-2">
-              <Input label="Rera URL" type="text" placeholder="Enter your Rera URL" name="url" onChange={(e) => onChangeRera(e)} value={reraData?.url} />
-            </div>
-            <div className="col-span-4">
-              <Input label="Image" type="file" placeholder="Enter your image" ref={reraRef} name="image" onChange={(e) => onChangeRera(e, true)} />
-              {reraData?.image && (
-                <img
-                  src={reraRef.current?.files?.length > 0 ? URL?.createObjectURL(reraData?.image) : reraData?.image}
-                  alt="Thumbnail Preview"
-                  className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+      {projectID && (
+        <CustomAccordion heading="Rera Details">
+          <form onSubmit={handleSubmitRera}>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div className="col-span-2">
+                <Input label="RERA Name" type="text" placeholder="Enter your name" name="name" onChange={(e) => onChangeRera(e)} value={reraData?.name} />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="RERA Number"
+                  type="text"
+                  placeholder="Enter your RERA Number"
+                  name="number"
+                  onChange={(e) => onChangeRera(e)}
+                  value={reraData?.number}
                 />
-              )}
+              </div>
+              <div className="col-span-2">
+                <Input label="Rera URL" type="text" placeholder="Enter your Rera URL" name="url" onChange={(e) => onChangeRera(e)} value={reraData?.url} />
+              </div>
+              <div className="col-span-4">
+                <Input label="Image" type="file" placeholder="Enter your image" ref={reraRef} name="image" onChange={(e) => onChangeRera(e, true)} />
+                {reraData?.image && (
+                  <img
+                    src={reraRef.current?.files?.length > 0 ? URL?.createObjectURL(reraData?.image) : reraData?.image}
+                    alt="Thumbnail Preview"
+                    className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-md"
+                  />
+                )}
+              </div>
+              <div className="col-span-2 mt-[32px]">
+                <Button type="submit" className="w-full" disabled={isReraLoading || !reraData?.name || !reraData?.number || !reraData?.url || !reraData?.image}>
+                  {isReraLoading ? "Loading..." : "save"}
+                </Button>
+              </div>
             </div>
-            <div className="col-span-2 mt-[32px]">
-              <Button type="submit" className="w-full" disabled={isReraLoading || !reraData?.name || !reraData?.number || !reraData?.url || !reraData?.image}>
-                {isReraLoading ? "Loading..." : "save"}
-              </Button>
-            </div>
+          </form>
+
+          <div className="mt-10">
+            <ReraTable hasReraData={hasReraData} setHasReraRowDeleted={setHasReraRowDeleted} setIsReraEditId={setIsReraEditId} />
           </div>
-        </form>
-
-        <div className="mt-10">
-          <ReraTable hasReraData={hasReraData} setHasReraRowDeleted={setHasReraRowDeleted} setIsReraEditId={setIsReraEditId} />
-        </div>
-      </CustomAccordion>
-
-      {/* other information container */}
-      <CustomAccordion heading="Other Information">
-        <p>lorem 20</p>
-      </CustomAccordion>
+        </CustomAccordion>
+      )}
     </>
   );
 }

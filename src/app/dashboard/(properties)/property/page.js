@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteProperty, FetchAllProperty } from "@/actions/project-actions";
 import CustomTable from "@/components/custom-table";
 import DeleteModal from "@/components/modal/delete-modal";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { useEffect, useState } from "react";
 
 export default function page() {
   const router = useRouter();
-  const [builderTableData, setBuilderTableData] = useState([]);
+  const [propertyTableData, setPropertyTableData] = useState([]);
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [isSingleRowData, setIsSingleRowData] = useState("");
 
@@ -20,14 +21,18 @@ export default function page() {
       cell: (cellInfo) => cellInfo.row.index + 1,
     },
     {
-      header: "Name",
-      accessorKey: "name",
+      header: "Property Name",
+      accessorKey: "projectName.name",
     },
     {
       header: "Image",
-      accessorKey: "image",
+      accessorKey: "featuredImage",
       cell: (cellInfo) => (
-        <img src={cellInfo?.row?.original?.image} alt="Country" className="w-16 h-16 object-cover rounded-md border border-gray-300 shadow-sm mx-auto" />
+        <img
+          src={cellInfo?.row?.original?.featuredImage}
+          alt="Country"
+          className="w-16 h-16 object-cover rounded-md border border-gray-300 shadow-sm mx-auto"
+        />
       ),
     },
     {
@@ -53,7 +58,7 @@ export default function page() {
           <button
             className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300"
             onClick={() => {
-              handleRedirectBuilderFormPage(cellInfo?.row?.original);
+              handleRedirectPropertyFormPage(cellInfo?.row?.original);
             }}
           >
             Edit
@@ -75,28 +80,26 @@ export default function page() {
   ];
 
   // fetch countries
-  const fetchBuilder = async () => {
-    const response = await apiCall("/builder");
-    if (!response.error) {
-      setBuilderTableData(response);
-    }
+  const fetchProperty = async () => {
+    const response = await FetchAllProperty();
+    setPropertyTableData(response);
   };
 
   useEffect(() => {
-    fetchBuilder();
+    fetchProperty();
   }, []);
 
   // redirect to the builder form page
-  const handleRedirectBuilderFormPage = (rowData) => {
-    router.push(`/dashboard/property/form?id=${rowData?._id}`);
+  const handleRedirectPropertyFormPage = (rowData) => {
+    router.push(`/dashboard/property/form?projectId=${rowData?._id}`);
   };
 
   // deleted row
   const handleDeletedRow = async () => {
-    const response = await apiCall(`/builder/${isSingleRowData?._id}`, "DELETE");
-    if (!response.error) {
+    const response = await deleteProperty(isSingleRowData?._id);
+    if (response) {
       setIsOpenDeleteModal(false);
-      fetchBuilder();
+      fetchProperty();
     }
   };
 
@@ -109,7 +112,7 @@ export default function page() {
         </div>
 
         <div className="mt-5">
-          <CustomTable columns={columns} data={builderTableData?.data} />
+          <CustomTable columns={columns} data={propertyTableData} />
         </div>
       </div>
 
