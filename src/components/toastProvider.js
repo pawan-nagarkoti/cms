@@ -8,6 +8,7 @@ export function ToastProvider() {
 }
 
 export function showToast(message, type = "error") {
+  console.log("meeee", message, type);
   if (type === "success") {
     toast.success(message);
   } else {

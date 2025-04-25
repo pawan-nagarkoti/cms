@@ -3,6 +3,7 @@
 import Input from "@/components/forms/Input";
 import { showToast } from "@/components/toastProvider";
 import { Button } from "@/components/ui/button";
+import { generateWelcomeEmail } from "@/config/constants";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,10 +32,27 @@ export default function page() {
     const response = await apiCall(`auth/signup`, `POST`, data);
 
     if (response?.error) {
-      showToast(response.message);
+      showToast(response.message, "error");
     } else {
-      showToast(response.message, "success");
-      router.push("/login");
+      const data = {
+        from: loginForm?.email,
+        subject: "Test Email from Next.js",
+        text: "Hello plain text",
+        html: generateWelcomeEmail({
+          username: loginForm.username,
+          email: loginForm.email,
+          password: loginForm.password,
+        }),
+      };
+      const res = await apiCall("send-email", `POST`, data);
+      console.log(res.rawResponse);
+      if (res.success === false) {
+        showToast(res.message);
+      } else {
+        showToast(response.message, "success");
+        showToast(res.message, "success");
+        router.push("/login");
+      }
     }
   };
   return (
