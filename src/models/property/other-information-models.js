@@ -17,6 +17,9 @@ const OtherInformationSchema = new mongoose.Schema(
     icbm: {
       type: String,
     },
+    projectID: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

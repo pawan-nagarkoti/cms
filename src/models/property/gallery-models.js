@@ -11,6 +11,9 @@ const GallerySchema = new mongoose.Schema(
     alt: {
       type: String,
     },
+    projectID: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

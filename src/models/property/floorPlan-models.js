@@ -17,6 +17,9 @@ const FloorSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    projectID: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

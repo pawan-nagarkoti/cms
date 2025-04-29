@@ -30,6 +30,7 @@ import {
   fetchSingleFaq,
   fetchSingleFloorPlan,
   fetchSingleGallery,
+  fetchSingleProperty,
   fetchSinglePropertyImage,
   fetchSingleRera,
   updateFaq,
@@ -47,6 +48,7 @@ import PropertyGalleryTable from "@/components/property-table/Property-gallery-t
 import FloorPlanTable from "@/components/property-table/Floor-plan-table";
 import ReraTable from "@/components/property-table/Rera-table";
 import FaqTable from "@/components/property-table/Faq-table";
+import Loading from "@/app/loading";
 
 const CustomEditor = dynamic(() => import("@/components/forms/CustomEditor"), {
   ssr: false,
@@ -56,6 +58,7 @@ export default function page() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectID = searchParams.get("projectId" || "");
+  const propertyId = searchParams.get("id" || "");
   const [isActive, setIsActive] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isIndex, setIndex] = useState(false);
@@ -108,6 +111,7 @@ export default function page() {
     icbm: "",
   });
   const slug = useSlug(projectFormData?.propertyTitle || "");
+  const [projectBuilderName, setProjectBuilderName] = useState("");
 
   const [hasImageRowDeleted, setHasImageRowDeleted] = useState(false); // is it deleted property image row ?
   const [isEditPropertyImageId, setIsEditPropertyImageId] = useState(null); // get project image id when we click on edit button on the table
@@ -117,6 +121,8 @@ export default function page() {
   const [hasGalleryRowDeleted, setHasGalleryRowDeleted] = useState(false);
   const [isEditGalleryId, setIsEditGalleryId] = useState(null); // get project image id when we click on edit button on the table
   const galleryRef = useRef(null);
+
+  const [fetchEditPropertyLoading, setFetchEditPropertyLoading] = useState(false);
 
   // Add property image states
   const [propertyImageFormData, setPropertyImageData] = useState({
@@ -289,7 +295,7 @@ export default function page() {
     try {
       const response = await addProperty(formData); // call server action for create property
       if (response.success) {
-        router.push(`/dashboard/property/form?projectId=${response?.data?.projectName}`); // set project id on prams
+        router.push(`/dashboard/property/form?projectId=${response?.data?.projectName}&id=${response?.data?._id}`); // set project id on prams
       }
     } catch (e) {
       console.log(e?.message);
@@ -356,9 +362,9 @@ export default function page() {
   const handleSubmitPropertyImage = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    formData.append("galleryImageTable", galleryFormData?.galleryImageTable);
-    formData.append("galleryTitleTable", galleryFormData?.galleryTitleTable);
-    formData.append("galleryAltTable", galleryFormData?.galleryAltTable);
+    formData.append("propertyImageTable", propertyImageFormData?.propertyImageTable);
+    formData.append("propertyTitleTable", propertyImageFormData?.propertyTitleTable);
+    formData.append("propertyAltTable", propertyImageFormData?.propertyAltTable);
     formData.append("porjectNameID", projectID);
 
     setIsPropertyImageDataLoding(true);
@@ -367,9 +373,9 @@ export default function page() {
       if (response.success) {
         fetchAllPropertyImage();
         setPropertyImageData({
-          galleryImageTable: "",
-          galleryTitleTable: "",
-          galleryAltTable: "",
+          propertyImageTable: "",
+          propertyTitleTable: "",
+          propertyAltTable: "",
         });
         setIsEditPropertyImageId(null); // reset edit property id
         if (propertyImageRef.current) propertyImageRef.current.value = "";
@@ -410,7 +416,7 @@ export default function page() {
   // fetch all property image
   const fetchAllPropertyImage = async () => {
     try {
-      const response = await fetchPropertyImage();
+      const response = await fetchPropertyImage(projectID);
       if (response?.success) {
         setPropertyImageDataContainer(response);
       }
@@ -438,7 +444,7 @@ export default function page() {
 
   // fetch all gallery images
   const fetchGalleryData = async () => {
-    const response = await fetchGallery();
+    const response = await fetchGallery(projectID);
     if (response.length > 0) {
       setHasGalleryData(response);
     }
@@ -471,6 +477,7 @@ export default function page() {
     formData.append("floorPrice", floorPlan.floorPrice);
     formData.append("floorType", floorPlan.floorType);
     formData.append("image", floorPlan.image);
+    formData.append("projectID", projectID);
 
     setIsFloorPlanLoading(true);
     try {
@@ -512,7 +519,7 @@ export default function page() {
 
   // fetch all floor plan data
   const fetchFloorPlan = async () => {
-    const response = await fetchAllFloorPlan();
+    const response = await fetchAllFloorPlan(projectID);
     if (response.length > 0) {
       setHasFloorPlanData(response);
     }
@@ -545,6 +552,7 @@ export default function page() {
     formData.append("number", reraData.number);
     formData.append("url", reraData.url);
     formData.append("image", reraData.image);
+    formData.append("projectID", projectID);
 
     setIsReraLoading(true);
     try {
@@ -586,7 +594,7 @@ export default function page() {
 
   // fetch all floor plan data
   const fetchReraData = async () => {
-    const response = await fetchAllRera();
+    const response = await fetchAllRera(projectID);
     if (response.length > 0) {
       setHasReraData(response);
     }
@@ -616,6 +624,7 @@ export default function page() {
     const formData = new FormData();
     formData.append("question", faq.question);
     formData.append("answer", faq.answer);
+    formData.append("projectID", projectID);
 
     setIsFaqLoading(true);
     try {
@@ -655,7 +664,7 @@ export default function page() {
 
   // fetch all floor faq
   const fetchFaqData = async () => {
-    const response = await fetchAllFaq();
+    const response = await fetchAllFaq(projectID);
     if (response.length > 0) {
       setHasFaq(response);
     }
@@ -676,308 +685,391 @@ export default function page() {
     fetchFaqSingleData();
   }, [isFaqEditId]);
 
+  // ================================= Fetch property data on the basis of param ========================================
+  const fetchProprtyEditData = async () => {
+    setFetchEditPropertyLoading(true);
+    try {
+      const v = await fetchSingleProperty(propertyId);
+      console.log(v);
+      setSelectedProject({ label: v?.projectName?.name, value: v?.projectName?._id }); // set project name
+      setProjectBuilderName(v?.builder); // set project builder name
+      setProjectFormData({
+        address: v?.address,
+        propertyTitle: v?.propertyTitle,
+        priceType: v?.priceType,
+        price: v?.price,
+        priceUnit: v?.priceUnit,
+        minPrice: v?.minPrice,
+        minUnit: v?.minUnit,
+        maxPrice: v?.maxPrice,
+        maxUnit: v?.maxUnit,
+        minSize: v?.minSize,
+        minSizeUnit: v?.minSizeUnit,
+        maxSize: v?.maxSize,
+        maxSizeUnit: v?.maxSizeUnit,
+        completionOn: v?.completionOn,
+        possionNumber: v?.possionOn,
+        possionWMY: v?.possionDropdown,
+        order: v?.order,
+        featuredImage: v?.featuredImage,
+        featuredImageTitle: v?.featuredImageTitle,
+        featuredImageAlt: v?.featuredImageAlt,
+        geoRegion: v?.geoRegion,
+        geoPosition: v?.geoPostion,
+        geoPlacename: v?.geoPlacename,
+        youtubeLink: v?.youtubeLink,
+        icbm: v?.icbm,
+      });
+
+      // v?.propertySubCategory?.map((v) => setSelectedSubCategory({ label: v?.subCategoryName, value: v?._id }));
+
+      // const a = v?.propertySubCategory?.map((v) => ({ label: v?.subCategoryName, value: v?._id }));
+      // if (a) {
+      //   setSelectedSubCategory(a);
+      // }
+
+      setSelectedSubCategory(
+        v?.propertySubCategory?.map((v) => ({
+          label: v?.subCategoryName,
+          value: v?._id,
+        }))
+      );
+      // setSelectedSubCategory(v?.propertySubCategory?.map((v) => ({ label: v?.subCategoryName, value: v?._id })));
+
+      // v?.propertySubCategory?.map((v) => console.log("vvvvv", v));
+
+      setIsFeatured(v?.featured || false);
+      setIndex(v?.index || false);
+      setIsActive(v?.status || false);
+    } catch (error) {
+      console.log(error?.message);
+    } finally {
+      setFetchEditPropertyLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (propertyId) {
+      fetchProprtyEditData();
+    }
+  }, [propertyId]);
+
+  useEffect(() => {
+    if (selectedSubCategory) console.log("selectedSubCategory", selectedSubCategory);
+  }, [selectedSubCategory]);
   return (
     <>
       {/* Project information container */}
-      <CustomAccordion heading="Project Information" defaultOpen={true}>
-        <form onSubmit={handleProjectInfo}>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-            <div className="sm:col-span-6">
-              <div>
-                {isProjectLoading ? (
-                  <p>Loading...</p>
-                ) : projectList && projectList.length === 0 ? (
-                  <div className="space-y-2">
-                    <label className="font-medium text-gray-700">Project Name</label>
-                    <p className="mt-1 text-sm text-gray-500">Create Active Project</p>
+      <div>
+        {fetchEditPropertyLoading ? (
+          <Loading />
+        ) : (
+          <CustomAccordion heading="Project Information" defaultOpen={true}>
+            <form onSubmit={handleProjectInfo}>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                <div className="sm:col-span-6">
+                  <div>
+                    {isProjectLoading ? (
+                      <p>Loading...</p>
+                    ) : projectList && projectList.length === 0 ? (
+                      <div className="space-y-2">
+                        <label className="font-medium text-gray-700">Project Name</label>
+                        <p className="mt-1 text-sm text-gray-500">Create Active Project</p>
+                      </div>
+                    ) : (
+                      <SelectDropdown
+                        label="Project Name"
+                        value={selectedProject}
+                        options={projectList}
+                        onChange={setSelectedProject}
+                        placeholder="Choose a country"
+                      />
+                    )}
                   </div>
-                ) : (
-                  <SelectDropdown
-                    label="Project Name"
-                    value={selectedProject}
-                    options={projectList}
-                    onChange={setSelectedProject}
-                    placeholder="Choose a country"
+                </div>
+                <div className="sm:col-span-6">
+                  <Input
+                    label="Builder Name *"
+                    placeholder="Enter your builder name"
+                    name="name"
+                    value={projectBuilderName ? projectBuilderName : selectedProject?.builderName || ""}
+                    disabled
+                    className="cursor-not-allowed"
                   />
-                )}
-              </div>
-            </div>
-            <div className="sm:col-span-6">
-              <Input
-                label="Builder Name *"
-                placeholder="Enter your builder name"
-                name="name"
-                value={selectedProject?.builderName || ""}
-                disabled
-                className="cursor-not-allowed"
-              />
-            </div>
-            <div className="col-span-full">
-              <Textarea label="Address" name="address" value={projectFormData?.address} onChange={handleChange} />
-            </div>
-            <div className="sm:col-span-6">
-              <Input
-                label="Property Title"
-                placeholder="Enter your property name"
-                name="propertyTitle"
-                value={projectFormData?.propertyTitle}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="sm:col-span-6">
-              <Input label="Property Slug *" placeholder="Enter your slug name" name="slug" value={slug} disabled className="cursor-not-allowed" />
-            </div>
-            <div className="sm:col-span-2">
-              <Dropdown label="Price Type" name="priceType" items={PriceType} handleChange={handleChange} value={projectFormData.priceType} />
-            </div>
-            {(projectFormData?.priceType === "Fixed" || projectFormData?.priceType === "") && (
-              <>
-                <div className="col-span-6">
-                  <Input label="Price" placeholder="Enter your price" name="price" value={projectFormData.price} onChange={handleChange} />
                 </div>
-                <div className="sm:col-span-4">
-                  <Dropdown label="Price Unit" name="priceUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.priceUnit} />
+                <div className="col-span-full">
+                  <Textarea label="Address" name="address" value={projectFormData?.address} onChange={handleChange} />
                 </div>
-              </>
-            )}
-
-            {projectFormData?.priceType === "Range" && (
-              <>
-                <div className="col-span-2">
-                  <Input label="Min Price" placeholder="Enter your price" name="minPrice" value={projectFormData.minPrice} onChange={handleChange} />
+                <div className="sm:col-span-6">
+                  <Input
+                    label="Property Title"
+                    placeholder="Enter your property name"
+                    name="propertyTitle"
+                    value={projectFormData?.propertyTitle}
+                    onChange={handleChange}
+                  />
                 </div>
-                <div className="sm:col-span-3">
-                  <Dropdown label="Min Price Unit" name="minUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.minUnit} />
-                </div>
-                <div className="col-span-3">
-                  <Input label="Max Price" placeholder="Enter your price" name="maxPrice" value={projectFormData.maxPrice} onChange={handleChange} />
+                <div className="sm:col-span-6">
+                  <Input label="Property Slug *" placeholder="Enter your slug name" name="slug" value={slug} disabled className="cursor-not-allowed" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Dropdown label="Max Price Unit" name="maxUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.maxUnit} />
+                  <Dropdown label="Price Type" name="priceType" items={PriceType} handleChange={handleChange} value={projectFormData.priceType} />
                 </div>
-              </>
-            )}
+                {(projectFormData?.priceType === "Fixed" || projectFormData?.priceType === "") && (
+                  <>
+                    <div className="col-span-6">
+                      <Input label="Price" placeholder="Enter your price" name="price" value={projectFormData.price} onChange={handleChange} />
+                    </div>
+                    <div className="sm:col-span-4">
+                      <Dropdown label="Price Unit" name="priceUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.priceUnit} />
+                    </div>
+                  </>
+                )}
 
-            <div className="sm:col-span-3">
-              <Input label="Min Size" placeholder="Enter your min size" name="minSize" value={projectFormData.minSize} onChange={handleChange} />
-            </div>
-            <div className="sm:col-span-3">
-              <Dropdown label="Min Size Unit" name="minSizeUnit" items={minSizeUnit} handleChange={handleChange} value={projectFormData.minSizeUnit} />
-            </div>
-            <div className="sm:col-span-3">
-              <Input label="Max Size" placeholder="Enter your maxSize" name="maxSize" value={projectFormData.maxSize} onChange={handleChange} />
-            </div>
-            <div className="sm:col-span-3">
-              <Dropdown label="Max Size Unit" name="maxSizeUnit" items={maxSizeUnit} handleChange={handleChange} value={projectFormData.maxSizeUnit} />
-            </div>
+                {projectFormData?.priceType === "Range" && (
+                  <>
+                    <div className="col-span-2">
+                      <Input label="Min Price" placeholder="Enter your price" name="minPrice" value={projectFormData.minPrice} onChange={handleChange} />
+                    </div>
+                    <div className="sm:col-span-3">
+                      <Dropdown label="Min Price Unit" name="minUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.minUnit} />
+                    </div>
+                    <div className="col-span-3">
+                      <Input label="Max Price" placeholder="Enter your price" name="maxPrice" value={projectFormData.maxPrice} onChange={handleChange} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Dropdown label="Max Price Unit" name="maxUnit" items={PriceUnit} handleChange={handleChange} value={projectFormData.maxUnit} />
+                    </div>
+                  </>
+                )}
 
-            <div className="sm:col-span-4">
-              <SelectDropdown
-                label="Property Sub Category"
-                value={selectedSubCategory}
-                options={hasSubCategory}
-                onChange={setSelectedSubCategory}
-                placeholder="Choose an sub category"
-                isMulti={true}
-              />
-            </div>
+                <div className="sm:col-span-3">
+                  <Input label="Min Size" placeholder="Enter your min size" name="minSize" value={projectFormData.minSize} onChange={handleChange} />
+                </div>
+                <div className="sm:col-span-3">
+                  <Dropdown label="Min Size Unit" name="minSizeUnit" items={minSizeUnit} handleChange={handleChange} value={projectFormData.minSizeUnit} />
+                </div>
+                <div className="sm:col-span-3">
+                  <Input label="Max Size" placeholder="Enter your maxSize" name="maxSize" value={projectFormData.maxSize} onChange={handleChange} />
+                </div>
+                <div className="sm:col-span-3">
+                  <Dropdown label="Max Size Unit" name="maxSizeUnit" items={maxSizeUnit} handleChange={handleChange} value={projectFormData.maxSizeUnit} />
+                </div>
 
-            <div className="sm:col-span-4">
-              <SelectDropdown
-                label="Topology"
-                value={selectedTopology}
-                options={hasTopology}
-                onChange={setSelectedTopology}
-                placeholder="Choose an sub topology"
-                isMulti={true}
-              />
-            </div>
-            <div className="sm:col-span-4">
-              <SelectDropdown
-                label="Microsite"
-                value={selectedMicrocity}
-                options={hasMicrocity}
-                onChange={setSelectedMicrocity}
-                placeholder="Choose an sub microcity"
-                isMulti={true}
-              />
-            </div>
-            <div className="sm:col-span-4">
-              {isAmentiesLoading ? (
-                <p>Loading...</p>
-              ) : amentiesList && amentiesList.length === 0 ? (
-                <div className="space-y-2">
-                  <label className="font-medium text-gray-700">Amenties</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Amenties</p>
+                <div className="sm:col-span-4">
+                  <SelectDropdown
+                    label="Property Sub Category"
+                    value={selectedSubCategory}
+                    options={hasSubCategory}
+                    onChange={setSelectedSubCategory}
+                    placeholder="Choose an sub category"
+                    isMulti={true}
+                  />
                 </div>
-              ) : (
-                <SelectDropdown
-                  label="Amenties"
-                  value={selectedAmenties}
-                  options={amentiesList}
-                  onChange={setSelectedAmenties}
-                  placeholder="Choose a Amenties"
-                  isMulti={true}
-                />
-              )}
-            </div>
-            <div className="sm:col-span-4">
-              {isFacilityLoading ? (
-                <p>Loading...</p>
-              ) : facilityList && facilityList.length === 0 ? (
-                <div className="space-y-2">
-                  <label className="font-medium text-gray-700">Facility</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Facility</p>
-                </div>
-              ) : (
-                <SelectDropdown
-                  label="Facility"
-                  value={selectedFacility}
-                  options={facilityList}
-                  onChange={setSelectedFacility}
-                  placeholder="Choose a Amenties"
-                  isMulti={true}
-                />
-              )}
-            </div>
-            <div className="sm:col-span-4">
-              {ismicrocityLoading ? (
-                <p>Loading...</p>
-              ) : microcityList && microcityList.length === 0 ? (
-                <div className="space-y-2">
-                  <label className="font-medium text-gray-700">Related Property Location</label>
-                  <p className="mt-1 text-sm text-gray-500">Create Active Microcity</p>
-                </div>
-              ) : (
-                <SelectDropdown
-                  label="Related Property Location"
-                  value={selectedRelatedProperties}
-                  options={microcityList}
-                  onChange={setSelectedRelatedProperties}
-                  placeholder="Choose a realted property location"
-                  isMulti={true}
-                />
-              )}
-            </div>
 
-            <div className="sm:col-span-4">
-              <Input
-                label="Property Completion On"
-                type="date"
-                placeholder="Enter your completion on"
-                name="completionOn"
-                onChange={handleChange}
-                value={projectFormData.completionOn}
-              />
-            </div>
-            <div className="sm:col-span-4">
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="col-span-6">
-                  <Dropdown label="Possion On" name="possionNumber" items={possionNumber} handleChange={handleChange} value={projectFormData.possionNumber} />
+                <div className="sm:col-span-4">
+                  <SelectDropdown
+                    label="Topology"
+                    value={selectedTopology}
+                    options={hasTopology}
+                    onChange={setSelectedTopology}
+                    placeholder="Choose an sub topology"
+                    isMulti={true}
+                  />
                 </div>
-                <div className="col-span-6">
-                  <Dropdown name="possionWMY" items={possionWMY} handleChange={handleChange} value={projectFormData.possionWMY} />
+                <div className="sm:col-span-4">
+                  <SelectDropdown
+                    label="Microsite"
+                    value={selectedMicrocity}
+                    options={hasMicrocity}
+                    onChange={setSelectedMicrocity}
+                    placeholder="Choose an sub microcity"
+                    isMulti={true}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  {isAmentiesLoading ? (
+                    <p>Loading...</p>
+                  ) : amentiesList && amentiesList.length === 0 ? (
+                    <div className="space-y-2">
+                      <label className="font-medium text-gray-700">Amenties</label>
+                      <p className="mt-1 text-sm text-gray-500">Create Active Amenties</p>
+                    </div>
+                  ) : (
+                    <SelectDropdown
+                      label="Amenties"
+                      value={selectedAmenties}
+                      options={amentiesList}
+                      onChange={setSelectedAmenties}
+                      placeholder="Choose a Amenties"
+                      isMulti={true}
+                    />
+                  )}
+                </div>
+                <div className="sm:col-span-4">
+                  {isFacilityLoading ? (
+                    <p>Loading...</p>
+                  ) : facilityList && facilityList.length === 0 ? (
+                    <div className="space-y-2">
+                      <label className="font-medium text-gray-700">Facility</label>
+                      <p className="mt-1 text-sm text-gray-500">Create Active Facility</p>
+                    </div>
+                  ) : (
+                    <SelectDropdown
+                      label="Facility"
+                      value={selectedFacility}
+                      options={facilityList}
+                      onChange={setSelectedFacility}
+                      placeholder="Choose a Amenties"
+                      isMulti={true}
+                    />
+                  )}
+                </div>
+                <div className="sm:col-span-4">
+                  {ismicrocityLoading ? (
+                    <p>Loading...</p>
+                  ) : microcityList && microcityList.length === 0 ? (
+                    <div className="space-y-2">
+                      <label className="font-medium text-gray-700">Related Property Location</label>
+                      <p className="mt-1 text-sm text-gray-500">Create Active Microcity</p>
+                    </div>
+                  ) : (
+                    <SelectDropdown
+                      label="Related Property Location"
+                      value={selectedRelatedProperties}
+                      options={microcityList}
+                      onChange={setSelectedRelatedProperties}
+                      placeholder="Choose a realted property location"
+                      isMulti={true}
+                    />
+                  )}
+                </div>
+
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Property Completion On"
+                    type="date"
+                    placeholder="Enter your completion on"
+                    name="completionOn"
+                    onChange={handleChange}
+                    value={projectFormData.completionOn}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="col-span-6">
+                      <Dropdown
+                        label="Possion On"
+                        name="possionNumber"
+                        items={possionNumber}
+                        handleChange={handleChange}
+                        value={projectFormData.possionNumber}
+                      />
+                    </div>
+                    <div className="col-span-6">
+                      <Dropdown name="possionWMY" items={possionWMY} handleChange={handleChange} value={projectFormData.possionWMY} />
+                    </div>
+                  </div>
+                </div>
+                <div className="sm:col-span-4">
+                  <Dropdown label="Property Order" name="order" items={propertyOrderBy} handleChange={handleChange} value={projectFormData.order} />
+                </div>
+
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Property Featured Image"
+                    type="file"
+                    placeholder="Enter your property featured iamge"
+                    name="featuredImage"
+                    onChange={(e) => handleChange(e, true)}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Property Featured Image Title"
+                    type="text"
+                    placeholder="Enter your featured image title"
+                    name="featuredImageTitle"
+                    onChange={handleChange}
+                    value={projectFormData?.featuredImageTitle}
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Property Featured Image Alt"
+                    type="text"
+                    placeholder="Enter your featured image alt"
+                    name="featuredImageAlt"
+                    onChange={handleChange}
+                    value={projectFormData?.featuredImageAlt}
+                  />
+                </div>
+
+                <div className="col-span-4">
+                  <Input
+                    label="Geo Region"
+                    type="text"
+                    placeholder="Enter your geo region"
+                    name="geoRegion"
+                    onChange={(e) => handleChange(e)}
+                    value={projectFormData?.geoRegion}
+                  />
+                </div>
+                <div className="col-span-4">
+                  <Input
+                    label="Geo Position"
+                    type="text"
+                    placeholder="Enter your Geo Position"
+                    name="geoPosition"
+                    onChange={(e) => handleChange(e)}
+                    value={projectFormData?.geoPosition}
+                  />
+                </div>
+                <div className="col-span-4">
+                  <Input
+                    label="Geo Placename"
+                    type="text"
+                    placeholder="Enter your Geo Placename"
+                    name="geoPlacename"
+                    onChange={(e) => handleChange(e)}
+                    value={projectFormData?.geoPlacename}
+                  />
+                </div>
+
+                <div className="col-span-4">
+                  <Input
+                    label="Youtube Link"
+                    type="text"
+                    placeholder="Enter your Youtube Link"
+                    name="youtubeLink"
+                    onChange={(e) => handleChange(e)}
+                    value={projectFormData?.youtubeLink}
+                  />
+                </div>
+
+                <div className="col-span-4">
+                  <Input label="ICBM" type="text" placeholder="Enter your ICBM" name="icbm" onChange={(e) => handleChange(e)} value={projectFormData?.icbm} />
+                </div>
+
+                <div className="col-span-full">
+                  <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
                 </div>
               </div>
-            </div>
-            <div className="sm:col-span-4">
-              <Dropdown label="Property Order" name="order" items={propertyOrderBy} handleChange={handleChange} value={projectFormData.order} />
-            </div>
 
-            <div className="sm:col-span-4">
-              <Input
-                label="Property Featured Image"
-                type="file"
-                placeholder="Enter your property featured iamge"
-                name="featuredImage"
-                onChange={(e) => handleChange(e, true)}
-              />
-            </div>
-            <div className="sm:col-span-4">
-              <Input
-                label="Property Featured Image Title"
-                type="text"
-                placeholder="Enter your featured image title"
-                name="featuredImageTitle"
-                onChange={handleChange}
-                value={projectFormData?.featuredImageTitle}
-              />
-            </div>
-            <div className="sm:col-span-4">
-              <Input
-                label="Property Featured Image Alt"
-                type="text"
-                placeholder="Enter your featured image alt"
-                name="featuredImageAlt"
-                onChange={handleChange}
-                value={projectFormData?.featuredImageAlt}
-              />
-            </div>
+              <div className="grid gap-3 mt-6">
+                <CustomToggle label="Is Featured" onCheckedChange={(checked) => setIsFeatured(checked)} checked={isFeatured} />
+                <CustomToggle label="Index" onCheckedChange={(checked) => setIndex(checked)} checked={isIndex} />
+                <CustomToggle label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
+              </div>
 
-            <div className="col-span-4">
-              <Input
-                label="Geo Region"
-                type="text"
-                placeholder="Enter your geo region"
-                name="geoRegion"
-                onChange={(e) => handleChange(e)}
-                value={projectFormData?.geoRegion}
-              />
-            </div>
-            <div className="col-span-4">
-              <Input
-                label="Geo Position"
-                type="text"
-                placeholder="Enter your Geo Position"
-                name="geoPosition"
-                onChange={(e) => handleChange(e)}
-                value={projectFormData?.geoPosition}
-              />
-            </div>
-            <div className="col-span-4">
-              <Input
-                label="Geo Placename"
-                type="text"
-                placeholder="Enter your Geo Placename"
-                name="geoPlacename"
-                onChange={(e) => handleChange(e)}
-                value={projectFormData?.geoPlacename}
-              />
-            </div>
-
-            <div className="col-span-4">
-              <Input
-                label="Youtube Link"
-                type="text"
-                placeholder="Enter your Youtube Link"
-                name="youtubeLink"
-                onChange={(e) => handleChange(e)}
-                value={projectFormData?.youtubeLink}
-              />
-            </div>
-
-            <div className="col-span-4">
-              <Input label="ICBM" type="text" placeholder="Enter your ICBM" name="icbm" onChange={(e) => handleChange(e)} value={projectFormData?.icbm} />
-            </div>
-
-            <div className="col-span-full">
-              <CustomEditor onChange={setEditorData} label="Long Description" data={editorData} />
-            </div>
-          </div>
-
-          <div className="grid gap-3 mt-6">
-            <CustomToggle label="Is Featured" onCheckedChange={(checked) => setIsFeatured(checked)} checked={isFeatured} />
-            <CustomToggle label="Index" onCheckedChange={(checked) => setIndex(checked)} checked={isIndex} />
-            <CustomToggle label="status (Active / Inactive)" onCheckedChange={(checked) => setIsActive(checked)} checked={isActive} />
-          </div>
-
-          <div className="text-center my-10">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Loding..." : "Submit"}
-            </Button>
-          </div>
-        </form>
-      </CustomAccordion>
+              <div className="text-center my-10">
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Loding..." : "Submit"}
+                </Button>
+              </div>
+            </form>
+          </CustomAccordion>
+        )}
+      </div>
 
       {/* Property Image */}
       {projectID && (

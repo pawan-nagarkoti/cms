@@ -183,6 +183,16 @@ export async function addProperty(formData) {
   }
 }
 
+// fetch single property
+export async function fetchSingleProperty(propertyId) {
+  connectToDB();
+  try {
+    const response = await Property.findById(propertyId).populate("projectName").populate("propertySubCategory");
+    return JSON.parse(JSON.stringify(response));
+  } catch (e) {
+    console.log(e?.message);
+  }
+}
 // fetch all property
 export async function FetchAllProperty() {
   await connectToDB();
@@ -212,16 +222,20 @@ export async function addPropertyImage(formData) {
       image,
       title: formData.get("propertyTitleTable"),
       alt: formData.get("propertyAltTable"),
-      projectId: formData.get("porjectNameID"),
+      projectID: formData.get("porjectNameID"),
     };
 
-    if (!data?.projectId)
+    console.log("data", data);
+
+    if (!data?.projectID) {
       return {
         success: false,
         message: "Project Id is missing",
       };
-
+    }
     const response = await Image.create(data);
+
+    // console.log("resssss", response);
     if (response) {
       return {
         success: true,
@@ -243,10 +257,11 @@ export async function addPropertyImage(formData) {
   }
 }
 // fetch all property image
-export async function fetchPropertyImage() {
+export async function fetchPropertyImage(projectID) {
   await connectToDB();
   try {
-    const response = await Image.find({});
+    // const response = await Image.find({});
+    const response = await Image.find({ projectID });
     if (response) {
       return {
         success: true,
@@ -275,7 +290,7 @@ export async function updatePropertyImage(id, formData) {
     image,
     title: formData.get("propertyTitleTable"),
     alt: formData.get("propertyAltTable"),
-    projectId: formData.get("porjectNameID"),
+    projectID: formData.get("porjectNameID"),
   };
   const response = await Image.findOneAndUpdate({ _id: id }, data, { new: true });
   return {
@@ -325,16 +340,16 @@ export async function addGallery(formData) {
     image,
     title: formData.get("galleryTitleTable"),
     alt: formData.get("galleryAltTable"),
-    projectId: formData.get("porjectNameID"),
+    projectID: formData.get("porjectNameID"),
   };
   const response = await Gallery.create(data);
   return response.toObject();
 }
 // fetch all property image
-export async function fetchGallery() {
+export async function fetchGallery(projectID) {
   await connectToDB();
   try {
-    const response = await Gallery.find({});
+    const response = await Gallery.find({ projectID });
     return response;
   } catch (e) {
     console.log(e?.message);
@@ -374,7 +389,7 @@ export async function updateGallery(id, formData) {
     image,
     title: formData.get("galleryTitleTable"),
     alt: formData.get("galleryAltTable"),
-    projectId: formData.get("porjectNameID"),
+    projectID: formData.get("porjectNameID"),
   };
   const response = await Gallery.findOneAndUpdate({ _id: id }, data, { new: true });
   return {
@@ -391,6 +406,7 @@ export async function addFloorPlan(formData) {
   const image = await convertImagesIntoUrl(getImage?.image, "image", formData); // convert image url
 
   const data = {
+    projectID: formData.get("projectID"),
     type: formData.get("floorType"),
     price: formData.get("floorPrice"),
     title: formData.get("floorImageTitle"),
@@ -400,11 +416,11 @@ export async function addFloorPlan(formData) {
   const response = await Floor.create(data);
   return response.toObject();
 }
-// fetch all property image
-export async function fetchAllFloorPlan() {
+// fetch all floor plan
+export async function fetchAllFloorPlan(projectID) {
   await connectToDB();
   try {
-    const response = await Floor.find({});
+    const response = await Floor.find({ projectID });
     return response;
   } catch (e) {
     console.log(e?.message);
@@ -466,15 +482,16 @@ export async function addRera(formData) {
     number: formData.get("number"),
     url: formData.get("url"),
     image,
+    projectID: formData.get("projectID"),
   };
   const response = await Rera.create(data);
   return response.toObject();
 }
 // fetch all Rera
-export async function fetchAllRera() {
+export async function fetchAllRera(projectID) {
   await connectToDB();
   try {
-    const response = await Rera.find({});
+    const response = await Rera.find({ projectID });
     return response;
   } catch (e) {
     console.log(e?.message);
@@ -529,15 +546,16 @@ export async function addFaq(formData) {
   const data = {
     question: formData.get("question"),
     answer: formData.get("answer"),
+    projectID: formData.get("projectID"),
   };
   const response = await Faq.create(data);
   return response.toObject();
 }
 // fetch all Faq
-export async function fetchAllFaq() {
+export async function fetchAllFaq(projectID) {
   await connectToDB();
   try {
-    const response = await Faq.find({});
+    const response = await Faq.find({ projectID });
     return response;
   } catch (e) {
     console.log(e?.message);

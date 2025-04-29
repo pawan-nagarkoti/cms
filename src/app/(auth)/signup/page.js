@@ -3,7 +3,7 @@
 import Input from "@/components/forms/Input";
 import { showToast } from "@/components/toastProvider";
 import { Button } from "@/components/ui/button";
-import { generateWelcomeEmail } from "@/config/constants";
+import { generateAlphanumericOTP, generateWelcomeEmail } from "@/config/constants";
 import { apiCall } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,31 +29,73 @@ export default function page() {
     data.append("email", loginForm?.email);
     data.append("password", loginForm?.password);
 
-    const response = await apiCall(`auth/signup`, `POST`, data);
+    // email data
+    const emailData = {
+      from: loginForm?.email,
+      subject: "Test Email from Next.js",
+      text: "Hello plain text",
+      // generate html template
+      html: generateWelcomeEmail({
+        username: loginForm.username,
+        email: loginForm.email,
+        password: loginForm.password,
+      }),
+    };
 
-    if (response?.error) {
-      showToast(response.message, "error");
-    } else {
-      const data = {
-        from: loginForm?.email,
-        subject: "Test Email from Next.js",
-        text: "Hello plain text",
-        html: generateWelcomeEmail({
-          username: loginForm.username,
-          email: loginForm.email,
-          password: loginForm.password,
-        }),
-      };
-      const res = await apiCall("send-email", `POST`, data);
-      console.log(res.rawResponse);
-      if (res.success === false) {
-        showToast(res.message);
-      } else {
+    const emailResponse = await apiCall("send-email", `POST`, emailData); // email send with otp
+
+    if (emailResponse.success) {
+      const now = new Date();
+      const otpSentAt = new Date(now.getTime() + 5 * 60000); // generate otp time with 5 minute later to current time
+
+      const generateOtp = generateAlphanumericOTP();
+      data.append("otp", generateOtp);
+      data.append("otpSentAt", otpSentAt);
+
+      showToast(emailResponse.message, "success");
+
+      const response = await apiCall(`auth/signup`, `POST`, data);
+
+      if (response) {
         showToast(response.message, "success");
-        showToast(res.message, "success");
         router.push("/login");
+      } else {
+        showToast(res.message);
       }
+    } else {
+      console.log("something wrong with signup");
+      showToast(res.message);
     }
+
+    // if (response?.error) {
+    //   showToast(response.message, "error");
+    // } else {
+    // const data = {
+    //   from: loginForm?.email,
+    //   subject: "Test Email from Next.js",
+    //   text: "Hello plain text",
+    //   html: generateWelcomeEmail({
+    //     username: loginForm.username,
+    //     email: loginForm.email,
+    //     password: loginForm.password,
+    //   }),
+    // };
+    // const res = await apiCall("send-email", `POST`, data);
+    // console.log(res.rawResponse);
+    // if (res.success === false) {
+    //   showToast(res.message);
+    // } else {
+    //   const now = new Date();
+    //   const otpSentAt = new Date(now.getTime() + 5 * 60000); // 5 minutes later
+
+    //   data.append("otp", generateAlphanumericOTP);
+    //   data.append("otpSentAt", otpSentAt);
+
+    //   showToast(response.message, "success");
+    //   showToast(res.message, "success");
+
+    //   // router.push("/login");
+    // }
   };
   return (
     <>

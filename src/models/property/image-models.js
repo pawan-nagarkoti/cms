@@ -11,7 +11,7 @@ const ImageSchema = new mongoose.Schema(
     alt: {
       type: String,
     },
-    projectId: {
+    projectID: {
       type: String,
       requuired: true,
     },

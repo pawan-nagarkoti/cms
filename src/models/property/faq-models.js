@@ -8,6 +8,9 @@ const FaqSchema = new mongoose.Schema(
     answer: {
       type: String,
     },
+    projectID: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

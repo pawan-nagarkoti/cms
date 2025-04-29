@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import Login from "@/models/login";
 import { JWT_SECRET } from "@/config/constants";
 import jwt from "jsonwebtoken";
+import SignUp from "@/models/sign-up";
+import { User } from "lucide-react";
 
 export async function POST(req) {
   try {
@@ -12,10 +14,11 @@ export async function POST(req) {
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
 
-    const { email, password } = data;
+    const { email, password, loginOtp, otpEnteredTime } = data;
+    console.log("password", password);
 
     // ✅ Validate required fields
-    if (!email || !password) {
+    if (!email || (!password && !loginOtp)) {
       return NextResponse.json(
         {
           success: false,
@@ -26,8 +29,7 @@ export async function POST(req) {
     }
 
     // ✅ Check if email exists
-    const user = await Login.findOne({ email });
-    console.log("user", user);
+    const user = await SignUp.findOne({ email });
     if (!user) {
       return NextResponse.json(
         {
@@ -39,16 +41,39 @@ export async function POST(req) {
     }
 
     // ✅ Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid credentials.",
-        },
-        { status: 401 }
-      );
+    if (password) {
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Invalid credentials.",
+          },
+          { status: 401 }
+        );
+      }
+    }
+
+    if (loginOtp) {
+      if (user.otp !== loginOtp) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "OTP is not matched",
+          },
+          { status: 401 }
+        );
+      } else if (otpEnteredTime > user.otpSentAt) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "OTP Is Expired",
+          },
+          { status: 401 }
+        );
+      }
     }
 
     // ✅ Create JWT

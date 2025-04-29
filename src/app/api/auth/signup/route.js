@@ -2,6 +2,7 @@ import connectToDB from "@/lib/db";
 import Login from "@/models/login";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import SignUp from "@/models/sign-up";
 
 export async function POST(req) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req) {
     const formData = await req.formData();
     const data = Object.fromEntries(formData.entries());
 
-    const { username, email, password } = data;
+    const { username, email, password, otp, otpSentAt } = data;
 
     // ✅ Basic Validation
     if (!username || !email || !password) {
@@ -18,7 +19,7 @@ export async function POST(req) {
     }
 
     // ✅ Check if user already exists
-    const existingUser = await Login.findOne({ email });
+    const existingUser = await SignUp.findOne({ email });
     if (existingUser) {
       return NextResponse.json({ success: false, message: "User already exists with this email." }, { status: 409 });
     }
@@ -26,11 +27,15 @@ export async function POST(req) {
     // ✅ Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await Login.create({
+    const newUser = await SignUp.create({
       username,
       email,
       password: hashedPassword,
+      otp,
+      otpSentAt,
     });
+
+    console.log("neee", newUser);
 
     return NextResponse.json(
       {
@@ -62,7 +67,7 @@ export async function POST(req) {
 export async function DELETE() {
   try {
     await connectToDB();
-    const data = await Login.deleteMany({});
+    const data = await SignUp.deleteMany({});
     return NextResponse.json(
       {
         message: data,

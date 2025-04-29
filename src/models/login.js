@@ -2,10 +2,6 @@ import mongoose from "mongoose";
 
 const LoginSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      trim: true,
-    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -13,8 +9,10 @@ const LoginSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       trim: true,
+    },
+    otp: {
+      type: String,
     },
   },
   { timestamps: true }
